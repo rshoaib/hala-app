@@ -27,7 +27,6 @@ import { dailyChallenges, type ChallengeQuestion } from '@/data/dailyChallenges'
 import * as Storage from '@/services/storageService';
 import GoldButton from '@/components/GoldButton';
 import QuizOption from '@/components/QuizOption';
-import ProgressRing from '@/components/ProgressRing';
 import AnimatedCounter from '@/components/AnimatedCounter';
 import ConfettiOverlay from '@/components/ConfettiOverlay';
 import { speakArabic, stopSpeaking } from '@/services/speechService';
@@ -242,54 +241,66 @@ export default function ChallengeScreen() {
 
     return (
       <View style={styles.container}>
-        {/* Timer + Multiplier Row */}
+        {/* Timer Bar */}
+        <View style={styles.timerBar}>
+          <View style={styles.timerBarBg}>
+            <View
+              style={[
+                styles.timerBarFill,
+                {
+                  width: `${timerProgress * 100}%`,
+                  backgroundColor: timerColor,
+                },
+              ]}
+            />
+          </View>
+        </View>
+
+        {/* Stats Row */}
         <View style={styles.playHeader}>
-          <ProgressRing
-            progress={timerProgress}
-            size={70}
-            strokeWidth={6}
-            color={timerColor}
-            bgColor={Colors.surface}
-          >
+          <View style={styles.timerDisplay}>
+            <Ionicons
+              name="timer-outline"
+              size={20}
+              color={timeLeft <= 10 ? Colors.error : Colors.primary}
+            />
             <Text
               style={[
                 styles.timerText,
                 timeLeft <= 10 && { color: Colors.error },
               ]}
             >
-              {timeLeft}
+              {timeLeft}s
             </Text>
-          </ProgressRing>
+          </View>
 
-          {multiplier > 1 && (
-            <Animated.View
-              style={[
-                styles.multiplierBadge,
-                { transform: [{ scale: multiplierScale }] },
-              ]}
-            >
-              <Text style={styles.multiplierText}>{multiplier}x</Text>
-            </Animated.View>
-          )}
+          {/* Progress dots */}
+          <View style={styles.progressDots}>
+            {questions.map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.dot,
+                  i < currentQuestion && styles.dotCompleted,
+                  i === currentQuestion && styles.dotActive,
+                ]}
+              />
+            ))}
+          </View>
 
           <View style={styles.liveStats}>
-            <Text style={styles.liveScore}>{score}</Text>
-            <Text style={styles.liveScoreLabel}>correct</Text>
+            {multiplier > 1 && (
+              <Animated.View
+                style={[
+                  styles.multiplierBadge,
+                  { transform: [{ scale: multiplierScale }] },
+                ]}
+              >
+                <Text style={styles.multiplierText}>{multiplier}x</Text>
+              </Animated.View>
+            )}
+            <Text style={styles.liveScore}>{score}/{questions.length}</Text>
           </View>
-        </View>
-
-        {/* Progress dots */}
-        <View style={styles.progressDots}>
-          {questions.map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.dot,
-                i < currentQuestion && styles.dotCompleted,
-                i === currentQuestion && styles.dotActive,
-              ]}
-            />
-          ))}
         </View>
 
         {/* Question */}
@@ -513,49 +524,73 @@ const styles = StyleSheet.create({
   },
 
   // ── Playing ──
+  timerBar: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
+  },
+  timerBarBg: {
+    height: 8,
+    backgroundColor: Colors.surface,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  timerBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
   playHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.sm,
+  },
+  timerDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.card,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    ...Shadows.soft,
   },
   timerText: {
-    color: Colors.text,
-    fontSize: FontSize.xl,
+    color: Colors.primary,
+    fontSize: FontSize.lg,
     fontWeight: FontWeight.black,
     fontFamily: FontFamily.black,
   },
   multiplierBadge: {
     backgroundColor: Colors.xpGold,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
     borderRadius: BorderRadius.full,
-    ...Shadows.glow,
+    marginBottom: 2,
   },
   multiplierText: {
     color: '#FFF',
-    fontSize: FontSize.lg,
+    fontSize: FontSize.sm,
     fontWeight: FontWeight.black,
   },
   liveStats: {
     alignItems: 'center',
+    gap: 2,
   },
   liveScore: {
     color: Colors.primary,
-    fontSize: FontSize.xxl,
+    fontSize: FontSize.lg,
     fontWeight: FontWeight.black,
-  },
-  liveScoreLabel: {
-    color: Colors.textMuted,
-    fontSize: FontSize.xs,
+    fontFamily: FontFamily.black,
   },
   progressDots: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    paddingVertical: Spacing.sm,
   },
   dot: {
     width: 8,
