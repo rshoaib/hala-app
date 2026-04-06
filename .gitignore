@@ -33,6 +33,20 @@ yarn-error.*
 # local env files
 .env*.local
 
+# API keys
+constants/aiConfig.ts
+
+# Build artifacts
+*.aab
+*.apk
+
+# Sensitive config
+google-services.json
+revenuecat-key.json
+
+# Python cache
+__pycache__/
+
 # typescript
 *.tsbuildinfo
 

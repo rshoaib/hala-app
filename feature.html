@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  body {
+    margin: 0;
+    width: 1024px;
+    height: 500px;
+    background: linear-gradient(135deg, #0d1b2a, #1b263b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: white;
+    overflow: hidden;
+  }
+  .container {
+    display: flex;
+    align-items: center;
+    gap: 60px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 50px;
+    border-radius: 30px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .icon {
+    width: 256px;
+    height: 256px;
+    border-radius: 56px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  .text-content {
+    max-width: 500px;
+  }
+  .title {
+    font-size: 80px;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(to right, #d4af37, #f3e5ab);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subtitle {
+    font-size: 32px;
+    font-weight: 400;
+    margin-top: 10px;
+    color: #e0e0e0;
+  }
+  .features {
+    margin-top: 30px;
+    font-size: 20px;
+    color: #a0a0a0;
+  }
+  .feature-tag {
+    display: inline-block;
+    background: rgba(212, 175, 55, 0.2);
+    color: #d4af37;
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <img class="icon" src="playstore_icon.png" />
+    <div class="text-content">
+      <h1 class="title">Hala</h1>
+      <div class="subtitle">Learn Emirati Arabic</div>
+      <div class="features">
+        <span class="feature-tag">Authentic Audio</span>
+        <span class="feature-tag">Local Radio</span>
+        <span class="feature-tag">Offline Mode</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
