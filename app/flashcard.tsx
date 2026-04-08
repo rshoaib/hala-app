@@ -98,6 +98,7 @@ export default function FlashcardScreen() {
       Storage.updatePhraseConfidence(currentPhrase.arabic, false);
     }
     setReviewed((prev) => prev + 1);
+    Storage.updateWeeklyChallenge('flashcard_reviews', 1);
     setIsFlipped(false);
     flipProgress.value = withTiming(0, { duration: 200 });
     setCurrentIndex((prev) => (prev + 1) % allPhrases.length);

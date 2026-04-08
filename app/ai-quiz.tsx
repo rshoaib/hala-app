@@ -132,6 +132,11 @@ export default function AIQuizScreen() {
       if (xpEarned > 0) {
         await Storage.addXP(xpEarned);
         await Storage.recordActivity();
+        // Track weekly challenges
+        await Storage.updateWeeklyChallenge('learn_phrases', score);
+        if (score === questions.length) {
+          await Storage.updateWeeklyChallenge('perfect_quizzes', 1);
+        }
       }
       // Show confetti for perfect score
       if (score === questions.length) {

@@ -58,7 +58,9 @@ export default function AlphabetScreen() {
     await Storage.markLetterLearned(letterId);
     await Storage.addXP(5);
     await Storage.recordActivity();
-    setLearnedLetters((prev) => prev.includes(letterId) ? prev : [...prev, letterId]);
+    const newLearned = learnedLetters.includes(letterId) ? learnedLetters : [...learnedLetters, letterId];
+    setLearnedLetters(newLearned);
+    await Storage.setMonthlyChallengeProgress('all_letters', newLearned.length);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
 

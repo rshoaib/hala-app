@@ -3,6 +3,9 @@
  * Safely handles missing expo-notifications in Expo Go
  */
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const NOTIFICATIONS_KEY = '@hala_notifications_enabled';
 
 let Notifications: any = null;
 try {
@@ -40,6 +43,13 @@ export async function setupDailyWordNotification() {
   if (Platform.OS === 'web' || !Notifications) return;
 
   try {
+    // Check if user has disabled notifications in settings
+    const enabled = await AsyncStorage.getItem(NOTIFICATIONS_KEY);
+    if (enabled === 'false') {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      return;
+    }
+
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 

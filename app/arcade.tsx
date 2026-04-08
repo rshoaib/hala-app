@@ -233,6 +233,9 @@ export default function ArcadeScreen() {
         const xpEarned = Math.floor(currentScore / 2);
         await Storage.addXP(xpEarned);
         await Storage.recordActivity();
+        if (currentScore >= 50) {
+          await Storage.updateWeeklyChallenge('arcade_score', 1);
+        }
       }
       // Read persisted high score to compare (another session may have set it)
       let persistedHigh = 0;

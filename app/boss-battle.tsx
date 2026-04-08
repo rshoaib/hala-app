@@ -176,6 +176,7 @@ export default function BossBattleScreen() {
     await Storage.addXP(200);
     await Storage.addCoins(50);
     await Storage.recordActivity();
+    await Storage.updateMonthlyChallenge('boss_wins', 1);
   }
 
   function getOptionState(

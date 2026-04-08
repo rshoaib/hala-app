@@ -9,7 +9,7 @@
 
 export const AI_CONFIG = {
   apiKey: 'YOUR_GEMINI_API_KEY',
-  model: 'gemini-2.0-flash',          // Fast + free tier
+  model: 'gemini-2.5-flash',          // Fast + free tier
   maxTokens: 512,
   temperature: 0.7,
 } as const;

@@ -145,6 +145,8 @@ export async function addXP(amount: number): Promise<number> {
   await addDailyXP(amount);
   // Update weekly challenge XP progress
   await updateWeeklyChallengeXP(amount);
+  // Update monthly challenge if type is total_xp
+  await updateMonthlyChallenge('total_xp', amount);
   return newXP;
 }
 
@@ -206,6 +208,7 @@ export async function recordActivity(): Promise<StreakData> {
   }
 
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0];
   let newStreak: StreakData;
 
   if (streak.lastActiveDate === yesterday) {
@@ -216,7 +219,8 @@ export async function recordActivity(): Promise<StreakData> {
       lastActiveDate: today,
       totalDaysActive: streak.totalDaysActive + 1,
     };
-  } else if (streak.lastActiveDate && streak.freezesAvailable > 0) {
+  } else if (streak.lastActiveDate === twoDaysAgo && streak.freezesAvailable > 0) {
+    // Freeze only covers exactly 1 missed day (yesterday)
     newStreak = {
       ...streak,
       currentStreak: streak.currentStreak + 1,
@@ -235,6 +239,10 @@ export async function recordActivity(): Promise<StreakData> {
   }
 
   await setJSON(KEYS.STREAK, newStreak);
+  // Track activity for weekly dots on home screen
+  await recordDailyActivity(1);
+  // Update monthly streak challenge with current streak count
+  await setMonthlyChallengeProgress('streak_days', newStreak.currentStreak);
   return newStreak;
 }
 
@@ -359,7 +367,7 @@ const WEEKLY_CHALLENGES = [
   { type: 'perfect_quizzes', target: 5, title: 'Get 5 perfect scores', emoji: '⭐', xpTarget: 400 },
   { type: 'flashcard_reviews', target: 40, title: 'Review 40 flashcards', emoji: '🃏', xpTarget: 300 },
   { type: 'listening_minutes', target: 30, title: 'Listen for 30 minutes', emoji: '🎧', xpTarget: 350 },
-  { type: 'arcade_score', target: 50, title: 'Score 50+ in Arcade', emoji: '🕹️', xpTarget: 300 },
+  { type: 'arcade_score', target: 5, title: 'Score 50+ in Arcade 5 times', emoji: '🕹️', xpTarget: 300 },
 ];
 
 export async function getWeeklyChallenge(): Promise<WeeklyChallenge> {
@@ -435,6 +443,18 @@ export async function updateMonthlyChallenge(type: string, amount: number = 1): 
   if (challenge.type === type) {
     challenge.progress = Math.min(challenge.progress + amount, challenge.target);
     // Update tier
+    const pct = challenge.progress / challenge.target;
+    if (pct >= 1) challenge.tier = 'gold';
+    else if (pct >= 0.7) challenge.tier = 'silver';
+    else if (pct >= 0.4) challenge.tier = 'bronze';
+    await setJSON(KEYS.MONTHLY_CHALLENGE, challenge);
+  }
+}
+
+export async function setMonthlyChallengeProgress(type: string, absoluteValue: number): Promise<void> {
+  const challenge = await getMonthlyChallenge();
+  if (challenge.type === type) {
+    challenge.progress = Math.min(absoluteValue, challenge.target);
     const pct = challenge.progress / challenge.target;
     if (pct >= 1) challenge.tier = 'gold';
     else if (pct >= 0.7) challenge.tier = 'silver';

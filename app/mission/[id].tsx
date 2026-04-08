@@ -230,8 +230,8 @@ export default function MissionScreen() {
     if (currentQuizIndex < totalQuestions - 1) {
       setCurrentQuizIndex((prev) => prev + 1);
     } else {
-      // Use score + 1 if current answer is correct (score updates async)
-      const finalScore = selectedAnswer === currentQuestion.correctAnswer ? score : score;
+      // score state may not reflect the current answer yet (setState is async)
+      const finalScore = selectedAnswer === currentQuestion.correctAnswer ? score + 1 : score;
       const scorePercent = totalQuestions > 0 ? finalScore / totalQuestions : 0;
 
       setPhase('result');
@@ -240,6 +240,16 @@ export default function MissionScreen() {
       // Only mark mission as completed if score >= 50%
       if (scorePercent >= 0.5) {
         await Storage.completeMission(mission.id);
+        await Storage.updateWeeklyChallenge('complete_missions', 1);
+        await Storage.updateMonthlyChallenge('all_missions', 1);
+      }
+      // Track phrases learned
+      if (finalScore > 0) {
+        await Storage.updateWeeklyChallenge('learn_phrases', finalScore);
+      }
+      // Track perfect quiz
+      if (finalScore === totalQuestions) {
+        await Storage.updateWeeklyChallenge('perfect_quizzes', 1);
       }
 
       // Award full XP if score >= 70%, otherwise award partial XP proportional to score

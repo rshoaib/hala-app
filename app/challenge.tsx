@@ -174,6 +174,11 @@ export default function ChallengeScreen() {
       await Storage.completeDailyChallenge();
       await Storage.addXP(finalXP);
       await Storage.recordActivity();
+      // Track weekly challenges
+      await Storage.updateWeeklyChallenge('learn_phrases', finalScore);
+      if (finalScore === questions.length) {
+        await Storage.updateWeeklyChallenge('perfect_quizzes', 1);
+      }
     }
   }
 

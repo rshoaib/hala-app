@@ -28,6 +28,7 @@ import {
   ClayStyle,
 } from '@/constants/theme';
 import * as Storage from '@/services/storageService';
+import { setupDailyWordNotification } from '@/services/notificationService';
 import SectionHeader from '@/components/SectionHeader';
 
 const DAILY_GOALS = [30, 50, 100];
@@ -227,7 +228,9 @@ export default function SettingsScreen() {
             value={notificationsEnabled}
             onValueChange={(val) => {
               setNotificationsEnabled(val);
-              AsyncStorage.setItem(NOTIFICATIONS_KEY, String(val));
+              AsyncStorage.setItem(NOTIFICATIONS_KEY, String(val)).then(() => {
+                setupDailyWordNotification();
+              });
             }}
             trackColor={{ false: Colors.surface, true: Colors.primaryMuted }}
             thumbColor={notificationsEnabled ? Colors.primary : Colors.textMuted}
@@ -293,13 +296,15 @@ export default function SettingsScreen() {
 
       {/* ── Danger Zone ── */}
       <View style={styles.dangerSection}>
+        <View style={styles.dangerDivider} />
+        <Text style={styles.dangerLabel}>Danger Zone</Text>
         <TouchableOpacity style={styles.resetButton} onPress={resetProgress}>
           <Ionicons name="trash-outline" size={16} color={Colors.error} />
           <Text style={styles.resetText}>Reset All Progress</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={{ height: 40 }} />
+      <View style={{ height: 60 }} />
     </ScrollView>
   );
 }
@@ -313,10 +318,7 @@ const styles = StyleSheet.create({
 
   // ── Coins Card ──
   coinCard: {
-    borderRadius: BorderRadius.xl,
-    overflow: 'hidden',
     marginTop: Spacing.md,
-    ...Shadows.cardLifted,
   },
   coinCardInner: {
     flexDirection: 'row',
@@ -330,6 +332,7 @@ const styles = StyleSheet.create({
     borderLeftColor: 'rgba(255,255,255,0.15)',
     borderRightColor: 'rgba(0,0,0,0.06)',
     borderBottomColor: 'rgba(0,0,0,0.12)',
+    ...Shadows.cardLifted,
   },
   coinEmoji: {
     fontSize: 36,
@@ -549,7 +552,22 @@ const styles = StyleSheet.create({
 
   // ── Danger Zone ──
   dangerSection: {
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.sm,
+  },
+  dangerDivider: {
+    height: 1,
+    backgroundColor: Colors.error + '15',
+    marginBottom: Spacing.md,
+  },
+  dangerLabel: {
+    color: Colors.error,
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: Spacing.sm,
   },
   resetButton: {
     flexDirection: 'row',
@@ -558,14 +576,16 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingVertical: Spacing.md,
     borderWidth: 1.5,
-    borderColor: Colors.error + '40',
+    borderColor: Colors.error + '30',
+    borderBottomWidth: 3,
+    borderBottomColor: Colors.error + '40',
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.errorLight,
   },
   resetText: {
     color: Colors.error,
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
-    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
   },
 });
