@@ -9,9 +9,11 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
-import { Colors, Spacing, FontSize, BorderRadius, Shadows } from '@/constants/theme';
+import {
+  Colors, Spacing, FontSize, FontWeight, FontFamily,
+  BorderRadius, Shadows, ClayStyle,
+} from '@/constants/theme';
 import * as Storage from '@/services/storageService';
 
 const { width } = Dimensions.get('window');
@@ -78,31 +80,31 @@ export default function ProgressScreen() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Streak Card */}
-      <View style={styles.streakCard}>
-        <LinearGradient
-          colors={streak.currentStreak > 0 ? ['#FF6B35', '#FF4500'] : [Colors.card, Colors.cardElevated]}
-          style={styles.streakGradient}
-        >
-          <Text style={styles.streakFireEmoji}>{streakEmoji}</Text>
-          <Text style={[styles.streakCount, streak.currentStreak === 0 && { color: Colors.text }]}>{streak.currentStreak}</Text>
-          <Text style={[styles.streakLabel, streak.currentStreak === 0 && { color: Colors.textSecondary }]}>Day Streak</Text>
-          <View style={styles.streakMeta}>
-            <View style={styles.streakMetaItem}>
-              <Text style={[styles.streakMetaValue, streak.currentStreak === 0 && { color: Colors.text }]}>{streak.longestStreak}</Text>
-              <Text style={[styles.streakMetaLabel, streak.currentStreak === 0 && { color: Colors.textMuted }]}>Longest</Text>
-            </View>
-            <View style={[styles.streakDivider, streak.currentStreak === 0 && { backgroundColor: Colors.border }]} />
-            <View style={styles.streakMetaItem}>
-              <Text style={[styles.streakMetaValue, streak.currentStreak === 0 && { color: Colors.text }]}>{streak.totalDaysActive}</Text>
-              <Text style={[styles.streakMetaLabel, streak.currentStreak === 0 && { color: Colors.textMuted }]}>Total Days</Text>
-            </View>
-            <View style={[styles.streakDivider, streak.currentStreak === 0 && { backgroundColor: Colors.border }]} />
-            <View style={styles.streakMetaItem}>
-              <Text style={[styles.streakMetaValue, streak.currentStreak === 0 && { color: Colors.text }]}>{streak.freezesAvailable}</Text>
-              <Text style={[styles.streakMetaLabel, streak.currentStreak === 0 && { color: Colors.textMuted }]}>Freezes</Text>
-            </View>
+      <View
+        style={[
+          styles.streakCard,
+          { backgroundColor: streak.currentStreak > 0 ? Colors.accent : '#9CA3C4' },
+        ]}
+      >
+        <Text style={styles.streakFireEmoji}>{streakEmoji}</Text>
+        <Text style={styles.streakCount}>{streak.currentStreak}</Text>
+        <Text style={styles.streakLabel}>Day Streak</Text>
+        <View style={styles.streakMeta}>
+          <View style={styles.streakMetaItem}>
+            <Text style={styles.streakMetaValue}>{streak.longestStreak}</Text>
+            <Text style={styles.streakMetaLabel}>Longest</Text>
           </View>
-        </LinearGradient>
+          <View style={styles.streakDivider} />
+          <View style={styles.streakMetaItem}>
+            <Text style={styles.streakMetaValue}>{streak.totalDaysActive}</Text>
+            <Text style={styles.streakMetaLabel}>Total Days</Text>
+          </View>
+          <View style={styles.streakDivider} />
+          <View style={styles.streakMetaItem}>
+            <Text style={styles.streakMetaValue}>{streak.freezesAvailable}</Text>
+            <Text style={styles.streakMetaLabel}>Freezes</Text>
+          </View>
+        </View>
       </View>
 
       {/* XP & Level Card */}
@@ -118,10 +120,7 @@ export default function ProgressScreen() {
           </View>
         </View>
         <View style={styles.xpBarBg}>
-          <LinearGradient
-            colors={[Colors.primary, Colors.primaryLight]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+          <View
             style={[
               styles.xpBarFill,
               { width: `${Math.min((levelInfo.currentXP / levelInfo.nextLevelXP) * 100, 100)}%` },
@@ -212,13 +211,15 @@ const styles = StyleSheet.create({
   },
   streakCard: {
     marginTop: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    ...Shadows.card,
-  },
-  streakGradient: {
+    borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
     alignItems: 'center',
+    borderWidth: 2,
+    borderTopColor: 'rgba(255,255,255,0.3)',
+    borderLeftColor: 'rgba(255,255,255,0.15)',
+    borderRightColor: 'rgba(0,0,0,0.06)',
+    borderBottomColor: 'rgba(0,0,0,0.12)',
+    ...Shadows.cardLifted,
   },
   streakFireEmoji: {
     fontSize: 48,
@@ -227,12 +228,14 @@ const styles = StyleSheet.create({
   streakCount: {
     color: '#FFF',
     fontSize: 56,
-    fontWeight: '900',
+    fontWeight: FontWeight.black,
+    fontFamily: FontFamily.black,
   },
   streakLabel: {
     color: 'rgba(255,255,255,0.8)',
     fontSize: FontSize.lg,
-    fontWeight: '600',
+    fontWeight: FontWeight.semibold,
+    fontFamily: FontFamily.semibold,
   },
   streakMeta: {
     flexDirection: 'row',
@@ -245,11 +248,13 @@ const styles = StyleSheet.create({
   streakMetaValue: {
     color: '#FFF',
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
   },
   streakMetaLabel: {
     color: 'rgba(255,255,255,0.6)',
     fontSize: FontSize.xs,
+    fontFamily: FontFamily.regular,
     marginTop: 2,
   },
   streakDivider: {
@@ -257,12 +262,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
   xpCard: {
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
+    ...ClayStyle.card,
     padding: Spacing.lg,
     marginTop: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    ...Shadows.card,
   },
   xpHeader: {
     flexDirection: 'row',
@@ -273,7 +276,8 @@ const styles = StyleSheet.create({
   xpTitle: {
     color: Colors.text,
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
   },
   xpTotal: {
     color: Colors.textSecondary,
@@ -294,7 +298,8 @@ const styles = StyleSheet.create({
   },
   coinText: {
     color: Colors.primary,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
     fontSize: FontSize.md,
   },
   xpBarBg: {
@@ -306,6 +311,7 @@ const styles = StyleSheet.create({
   xpBarFill: {
     height: '100%',
     borderRadius: BorderRadius.full,
+    backgroundColor: Colors.primary,
   },
   xpProgress: {
     color: Colors.textMuted,
@@ -314,17 +320,16 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
   },
   listeningCard: {
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
+    ...ClayStyle.card,
     padding: Spacing.lg,
     marginTop: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    ...Shadows.card,
   },
   cardTitle: {
     color: Colors.text,
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
     marginBottom: Spacing.sm,
   },
   listeningTotal: {
@@ -361,7 +366,7 @@ const styles = StyleSheet.create({
   },
   barLabelActive: {
     color: Colors.primary,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
   },
   barValue: {
     color: Colors.textSecondary,
@@ -371,7 +376,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: Colors.text,
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
     marginTop: Spacing.lg,
     marginBottom: Spacing.md,
   },
@@ -382,12 +388,10 @@ const styles = StyleSheet.create({
   },
   badgeCard: {
     width: (width - Spacing.md * 2 - Spacing.sm * 2) / 3,
-    backgroundColor: Colors.card,
+    ...ClayStyle.card,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   badgeLocked: {
     opacity: 0.4,
@@ -399,7 +403,8 @@ const styles = StyleSheet.create({
   badgeTitle: {
     color: Colors.text,
     fontSize: FontSize.xs,
-    fontWeight: '600',
+    fontWeight: FontWeight.semibold,
+    fontFamily: FontFamily.semibold,
     textAlign: 'center',
   },
   badgeTitleLocked: {
@@ -408,16 +413,14 @@ const styles = StyleSheet.create({
   badgeUnlocked: {
     color: Colors.success,
     fontSize: FontSize.xs,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
     marginTop: 2,
   },
   summaryCard: {
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
+    ...ClayStyle.card,
     padding: Spacing.lg,
     marginTop: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    ...Shadows.card,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -433,6 +436,7 @@ const styles = StyleSheet.create({
   summaryValue: {
     color: Colors.text,
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
   },
 });

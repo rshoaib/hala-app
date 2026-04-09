@@ -33,6 +33,16 @@ function isRetryableError(error: any): boolean {
   return false;
 }
 
+// Track whether we've fallen back to the alternate model
+let usingFallback = false;
+
+function getModelName(): string {
+  if (usingFallback && AI_CONFIG.fallbackModel) {
+    return AI_CONFIG.fallbackModel;
+  }
+  return AI_CONFIG.model;
+}
+
 function isStaleChatError(error: any): boolean {
   const msg = (error?.message || error?.toString() || '').toLowerCase();
   if (msg.includes('context') || msg.includes('token') || msg.includes('too long')) return true;
@@ -48,6 +58,13 @@ async function withRetry<T>(fn: () => Promise<T>, label: string): Promise<T> {
     } catch (error: any) {
       lastError = error;
       if (error?.message === 'GEMINI_API_KEY_NOT_SET') throw error;
+
+      // On first 503/unavailable, try switching to fallback model
+      if (attempt === 0 && !usingFallback && AI_CONFIG.fallbackModel && isRetryableError(error)) {
+        console.warn(`${label}: Primary model unavailable, switching to fallback`);
+        usingFallback = true;
+        continue;
+      }
 
       if (isRetryableError(error) && attempt < MAX_RETRIES - 1) {
         const delay = BASE_DELAY_MS * Math.pow(2, attempt);
@@ -86,7 +103,7 @@ function getClient(): GoogleGenerativeAI {
 export function startTutorChat(): void {
   const client = getClient();
   const model = client.getGenerativeModel({
-    model: AI_CONFIG.model,
+    model: getModelName(),
     systemInstruction: SYSTEM_PROMPTS.tutor,
     generationConfig: {
       maxOutputTokens: AI_CONFIG.maxTokens,
@@ -173,7 +190,7 @@ export async function generateQuiz(
     return await withRetry(async () => {
       const client = getClient();
       const model = client.getGenerativeModel({
-        model: AI_CONFIG.model,
+        model: getModelName(),
         systemInstruction: SYSTEM_PROMPTS.quizGenerator,
         generationConfig: {
           maxOutputTokens: 1024,
@@ -234,7 +251,7 @@ export async function explainAnswer(
     return await withRetry(async () => {
       const client = getClient();
       const model = client.getGenerativeModel({
-        model: AI_CONFIG.model,
+        model: getModelName(),
         systemInstruction: SYSTEM_PROMPTS.explainer,
         generationConfig: {
           maxOutputTokens: 200,

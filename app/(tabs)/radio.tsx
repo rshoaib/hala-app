@@ -13,11 +13,13 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Spacing, FontSize, BorderRadius, Shadows } from '@/constants/theme';
+import {
+  Colors, Spacing, FontSize, FontWeight, FontFamily,
+  BorderRadius, Shadows, ClayStyle,
+} from '@/constants/theme';
 import { radioStations, DIFFICULTY_LABELS, type RadioStation } from '@/data/radioStations';
 import * as Storage from '@/services/storageService';
 
@@ -305,11 +307,8 @@ export default function RadioScreen() {
     >
       {/* Now Playing Card */}
       {currentStation ? (
-        <View style={styles.nowPlaying}>
-          <LinearGradient
-            colors={[currentStation.color + '20', Colors.card]}
-            style={styles.nowPlayingGradient}
-          >
+        <View style={[styles.nowPlaying, { borderColor: currentStation.color + '30' }]}>
+          <View style={styles.nowPlayingInner}>
             {/* Live / Paused indicator */}
             <View style={styles.liveRow}>
               <Animated.View
@@ -389,7 +388,7 @@ export default function RadioScreen() {
             <Text style={styles.listeningTimer}>
               🎧 {listeningMinutes} min this session • {totalListening} min total
             </Text>
-          </LinearGradient>
+          </View>
         </View>
       ) : (
         <View style={styles.noStation}>
@@ -495,12 +494,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
   },
   nowPlaying: {
+    ...ClayStyle.card,
     marginTop: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    ...Shadows.card,
+    ...Shadows.cardLifted,
   },
-  nowPlayingGradient: {
+  nowPlayingInner: {
     padding: Spacing.xl,
     alignItems: 'center',
   },
@@ -519,7 +517,8 @@ const styles = StyleSheet.create({
   liveText: {
     color: Colors.error,
     fontSize: FontSize.xs,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
     letterSpacing: 1.5,
   },
   nowPlayingEmoji: {
@@ -529,7 +528,8 @@ const styles = StyleSheet.create({
   nowPlayingName: {
     color: Colors.text,
     fontSize: FontSize.xxl,
-    fontWeight: '800',
+    fontWeight: FontWeight.black,
+    fontFamily: FontFamily.black,
   },
   nowPlayingNameAr: {
     color: Colors.textSecondary,
@@ -574,7 +574,8 @@ const styles = StyleSheet.create({
   stopText: {
     color: Colors.error,
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontWeight: FontWeight.semibold,
+    fontFamily: FontFamily.semibold,
   },
   listeningTimer: {
     color: Colors.textSecondary,
@@ -593,7 +594,8 @@ const styles = StyleSheet.create({
   noStationTitle: {
     color: Colors.text,
     fontSize: FontSize.xxl,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
   },
   noStationSub: {
     color: Colors.textSecondary,
@@ -639,7 +641,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: Colors.text,
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
     marginTop: Spacing.lg,
     marginBottom: Spacing.md,
   },
@@ -679,7 +682,8 @@ const styles = StyleSheet.create({
   stationName: {
     color: Colors.text,
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
     flex: 1,
   },
   stationNameAr: {
@@ -701,7 +705,8 @@ const styles = StyleSheet.create({
   },
   difficultyBadge: {
     fontSize: FontSize.xs,
-    fontWeight: '600',
+    fontWeight: FontWeight.semibold,
+    fontFamily: FontFamily.semibold,
   },
   stationFreq: {
     color: Colors.textMuted,
