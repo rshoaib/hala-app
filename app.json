@@ -34,7 +34,7 @@
         "FOREGROUND_SERVICE"
       ],
       "package": "com.hala.emirati.arabic",
-      "versionCode": 7,
+      "versionCode": 8,
       "usesCleartextTraffic": true
     },
     "web": {

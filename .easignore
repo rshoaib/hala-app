@@ -43,3 +43,11 @@ yarn-error.*
 
 # Python cache
 __pycache__/
+
+# Tests
+__tests__/
+jest.config.js
+coverage/
+
+# Claude
+.claude/
