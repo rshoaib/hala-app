@@ -16,8 +16,7 @@ import {
   Dimensions,
   Image,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Gradients, FontSize } from '@/constants/theme';
+import { Colors, FontSize } from '@/constants/theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -231,12 +230,7 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
 
   return (
     <Animated.View style={[styles.container, { opacity: overallOpacity }]}>
-      <LinearGradient
-        colors={['#FBF8F3', '#F5F0E8', '#EDE7DB', '#E5DECE']}
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
+      <View style={[styles.gradient, { backgroundColor: '#F5F0E8' }]}>
         {/* Floating Arabic letters background */}
         {FLOATING_LETTERS.map((letter, i) => (
           <Animated.Text
@@ -347,7 +341,7 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
             ]}
           />
         </View>
-      </LinearGradient>
+      </View>
     </Animated.View>
   );
 }

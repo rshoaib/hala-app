@@ -12,13 +12,11 @@ import {
   Dimensions,
   Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   Colors,
-  Gradients,
   Spacing,
   FontSize,
   FontWeight,
@@ -100,13 +98,10 @@ export default function AlphabetScreen() {
             </Text>
           </View>
           <View style={styles.progressBarBg}>
-            <LinearGradient
-              colors={Gradients.gold}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+            <View
               style={[
                 styles.progressBarFill,
-                { width: `${progress * 100}%` },
+                { width: `${progress * 100}%`, backgroundColor: Colors.primary },
               ]}
             />
           </View>

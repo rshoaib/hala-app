@@ -11,7 +11,6 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -429,14 +428,7 @@ export default function ArcadeScreen() {
               )}
 
               {/* Danger zone */}
-              <LinearGradient
-                colors={[
-                  'transparent',
-                  'rgba(231, 76, 60, 0.1)',
-                  'rgba(231, 76, 60, 0.25)',
-                ]}
-                style={styles.dangerZone}
-              />
+              <View style={styles.dangerZone} />
             </View>
 
             {/* Answer Options */}
@@ -683,6 +675,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: '100%',
     height: 50,
+    backgroundColor: 'rgba(231, 76, 60, 0.15)',
   },
 
   // ── Options ──
