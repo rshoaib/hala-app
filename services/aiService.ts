@@ -235,6 +235,81 @@ export async function generateQuiz(
 }
 
 // ─────────────────────────────────────────
+// 2b. BOSS BATTLE QUESTION GENERATION
+// ─────────────────────────────────────────
+
+/**
+ * Generate boss battle questions from the curriculum phrases.
+ * Returns 15 varied, challenging questions for the boss fight.
+ * Falls back to empty array so caller can use static questions.
+ */
+export async function generateBossQuestions(
+  phrases: { arabic: string; english: string; transliteration: string }[],
+  count: number = 15
+): Promise<AIQuizQuestion[]> {
+  try {
+    return await withRetry(async () => {
+      const client = getClient();
+      const model = client.getGenerativeModel({
+        model: getModelName(),
+        systemInstruction: `You are a challenging Emirati Arabic quiz master for a boss battle game.
+Generate tough but fair quiz questions in valid JSON format only. No markdown, no explanation, just the JSON array.
+
+Each question must have:
+- "question": The question text (in English, varied and challenging)
+- "options": Array of 4 answer choices (make wrong answers plausible)
+- "correctAnswer": Must match one option exactly
+- "explanation": Brief explanation with cultural context
+
+Make questions HARDER than a regular quiz:
+1. "What does [Arabic phrase] mean?" — use full phrases, not just single words
+2. "How would you say [English] in Emirati dialect?" — test production
+3. "Which response fits: [situation]?" — contextual/cultural usage
+4. "What's the difference between [word A] and [word B]?" — distinguish similar words
+5. "Complete: [partial conversation]" — fill in dialogue gaps
+
+Focus on EMIRATI dialect. Make plausible distractors. Vary difficulty.`,
+        generationConfig: {
+          maxOutputTokens: 2048,
+          temperature: 0.9,
+        },
+      });
+
+      const phraseSample = phrases
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 20)
+        .map((p) => `${p.arabic} (${p.transliteration}) = ${p.english}`)
+        .join('\n');
+
+      const prompt = `Generate exactly ${count} challenging boss battle quiz questions using these Emirati Arabic phrases:\n\n${phraseSample}\n\nReturn ONLY a valid JSON array. No markdown code blocks.`;
+
+      const result = await model.generateContent(prompt);
+      const text = result.response.text().trim();
+
+      const jsonStr = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const questions: AIQuizQuestion[] = JSON.parse(jsonStr);
+
+      return questions
+        .filter(
+          (q) =>
+            q.question &&
+            Array.isArray(q.options) &&
+            q.options.length >= 2 &&
+            q.correctAnswer &&
+            q.options.includes(q.correctAnswer)
+        )
+        .slice(0, count);
+    }, 'BossQuiz');
+  } catch (error: any) {
+    if (error?.message === 'GEMINI_API_KEY_NOT_SET') {
+      throw error;
+    }
+    console.error('Boss quiz generation error:', error);
+    return [];
+  }
+}
+
+// ─────────────────────────────────────────
 // 3. SMART EXPLANATIONS
 // ─────────────────────────────────────────
 

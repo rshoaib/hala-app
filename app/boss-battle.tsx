@@ -2,13 +2,14 @@
  * Boss Battle Screen — Desert Gold redesign
  * Dark desert theme, animated HP bar, QuizOption, victory/defeat
  */
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Animated,
+  ActivityIndicator,
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +24,11 @@ import {
   BorderRadius,
 } from '@/constants/theme';
 import { missions } from '@/data/missions';
+import {
+  generateBossQuestions,
+  isAIConfigured,
+  type AIQuizQuestion,
+} from '@/services/aiService';
 import * as Storage from '@/services/storageService';
 import GoldButton from '@/components/GoldButton';
 import QuizOption from '@/components/QuizOption';
@@ -31,12 +37,15 @@ import ConfettiOverlay from '@/components/ConfettiOverlay';
 
 const { width } = Dimensions.get('window');
 
-// Gather all quiz questions from Level 1 (unshuffled source pool)
-const allBossQuestions = missions
+// Static fallback questions from Level 1 missions
+const staticBossQuestions = missions
   .filter((m) => m.level === 1)
   .flatMap((m) => m.quiz);
 
-type Phase = 'intro' | 'battle' | 'victory' | 'defeat' | 'error';
+// All phrases for AI generation
+const allPhrases = missions.flatMap((m) => m.phrases);
+
+type Phase = 'intro' | 'loading' | 'battle' | 'victory' | 'defeat' | 'error';
 
 export default function BossBattleScreen() {
   const router = useRouter();
@@ -47,12 +56,13 @@ export default function BossBattleScreen() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [bossHP, setBossHP] = useState(100);
   const [showConfetti, setShowConfetti] = useState(false);
-  // Shuffle seed changes each time startBattle is called, triggering a new shuffle
-  const [shuffleSeed, setShuffleSeed] = useState(0);
+  const [bossQuestions, setBossQuestions] = useState<AIQuizQuestion[]>([]);
+  const [isAIGenerated, setIsAIGenerated] = useState(false);
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const bossScaleAnim = useRef(new Animated.Value(1)).current;
   const hpFlashAnim = useRef(new Animated.Value(0)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
 
   // Use refs for values accessed inside setTimeout to avoid stale closures
   const livesRef = useRef(lives);
@@ -62,47 +72,52 @@ export default function BossBattleScreen() {
   const currentQRef = useRef(currentQ);
   currentQRef.current = currentQ;
 
-  // Shuffle inside the component, re-shuffle each game
-  const bossQuestions = useMemo(() => {
-    return [...allBossQuestions]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 15);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shuffleSeed]);
-
   const totalQ = bossQuestions.length;
   const hpPerQuestion = totalQ > 0 ? 100 / totalQ : 0;
 
-  function startBattle() {
-    setShuffleSeed((s) => s + 1);
-    setPhase('battle');
+  async function startBattle() {
+    setPhase('loading');
     setCurrentQ(0);
     setScore(0);
     setLives(3);
     setBossHP(100);
     setShowConfetti(false);
-  }
 
-  // Guard: if no quiz questions available, show error state
-  if (totalQ === 0) {
-    return (
-      <View style={[styles.container, styles.defeatBg]}>
-        <View style={styles.resultContent}>
-          <Text style={styles.resultEmoji}>⚠️</Text>
-          <Text style={styles.resultTitle}>No Questions</Text>
-          <Text style={styles.defeatSubtitle}>
-            No quiz questions are available for this boss battle. Complete some
-            missions first!
-          </Text>
-          <GoldButton
-            title="Go Back"
-            icon="arrow-back"
-            onPress={() => router.back()}
-            style={{ marginTop: Spacing.xl }}
-          />
-        </View>
-      </View>
-    );
+    // Spin animation for loading
+    Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    // Try AI generation first, fall back to static
+    if (isAIConfigured()) {
+      try {
+        const aiQuestions = await generateBossQuestions(allPhrases, 15);
+        if (aiQuestions.length >= 5) {
+          setBossQuestions(aiQuestions);
+          setIsAIGenerated(true);
+          setPhase('battle');
+          return;
+        }
+      } catch {}
+    }
+
+    // Fallback: shuffle static questions
+    const shuffled = [...staticBossQuestions]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 15)
+      .map((q) => ({
+        question: q.question,
+        options: q.options || [],
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation || '',
+      }));
+    setBossQuestions(shuffled);
+    setIsAIGenerated(false);
+    setPhase('battle');
   }
 
   function handleAnswer(answer: string) {
@@ -201,8 +216,8 @@ export default function BossBattleScreen() {
 
           <View style={styles.introCard}>
             <Text style={styles.introDesc}>
-              Defeat the boss by answering {totalQ} questions from all
-              missions. You have 3 lives -- don't lose them all!
+              Defeat the boss by answering 15 AI-generated questions.
+              Every battle is unique! You have 3 lives -- don't lose them all!
             </Text>
           </View>
 
@@ -212,8 +227,8 @@ export default function BossBattleScreen() {
               <Text style={styles.ruleChipText}>3 lives</Text>
             </View>
             <View style={styles.ruleChip}>
-              <Ionicons name="help-circle" size={14} color={Colors.xpGold} />
-              <Text style={styles.ruleChipText}>{totalQ} questions</Text>
+              <Ionicons name="sparkles" size={14} color={Colors.xpGold} />
+              <Text style={styles.ruleChipText}>AI questions</Text>
             </View>
             <View style={styles.ruleChip}>
               <Ionicons name="star" size={14} color={Colors.xpGold} />
@@ -227,6 +242,35 @@ export default function BossBattleScreen() {
             variant="accent"
             onPress={startBattle}
             style={{ marginTop: Spacing.xxl }}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  // ── LOADING ──
+  if (phase === 'loading') {
+    const spin = spinAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0deg', '360deg'],
+    });
+
+    return (
+      <View style={[styles.container, styles.bossBg]}>
+        <View style={styles.introContent}>
+          <Animated.View style={{ transform: [{ rotate: spin }] }}>
+            <Text style={{ fontSize: 64 }}>🐉</Text>
+          </Animated.View>
+          <Text style={[styles.introTitle, { marginTop: Spacing.lg }]}>
+            PREPARING BATTLE
+          </Text>
+          <Text style={styles.introSubtitle}>
+            AI is forging unique questions...
+          </Text>
+          <ActivityIndicator
+            size="large"
+            color={Colors.xpGold}
+            style={{ marginTop: Spacing.xl }}
           />
         </View>
       </View>
@@ -298,9 +342,17 @@ export default function BossBattleScreen() {
             </View>
 
             {/* Question counter */}
-            <Text style={styles.questionNum}>
-              {currentQ + 1} / {totalQ}
-            </Text>
+            <View style={styles.questionCounterRow}>
+              <Text style={styles.questionNum}>
+                {currentQ + 1} / {totalQ}
+              </Text>
+              {isAIGenerated && (
+                <View style={styles.aiBadge}>
+                  <Ionicons name="sparkles" size={10} color={Colors.xpGold} />
+                  <Text style={styles.aiBadgeText}>AI</Text>
+                </View>
+              )}
+            </View>
           </View>
 
           {/* Question + Options */}
@@ -570,13 +622,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 4,
   },
+  questionCounterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
   questionNum: {
     color: '#9CA3C4',
     fontSize: FontSize.sm,
     fontFamily: FontFamily.regular,
     textAlign: 'center',
-    marginTop: Spacing.sm,
     opacity: 0.5,
+  },
+  aiBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(200, 150, 62, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+  },
+  aiBadgeText: {
+    color: Colors.xpGold,
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
   },
 
   // ── Question ──
