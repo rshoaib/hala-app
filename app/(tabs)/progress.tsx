@@ -78,7 +78,11 @@ export default function ProgressScreen() {
   ];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 120 }}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Streak Card */}
       <View
         style={[
@@ -198,7 +202,6 @@ export default function ProgressScreen() {
         </View>
       </View>
 
-      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }

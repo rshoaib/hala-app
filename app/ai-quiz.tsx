@@ -7,6 +7,7 @@ import {
   View,
   Text,
   StyleSheet,
+  ScrollView,
   ActivityIndicator,
   Animated,
   TouchableOpacity,
@@ -313,7 +314,12 @@ export default function AIQuizScreen() {
           headerTintColor: Colors.text,
         }}
       />
-      <View style={styles.container}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.playingContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
         {/* Progress Bar */}
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
@@ -361,7 +367,7 @@ export default function AIQuizScreen() {
             </View>
           )}
         </Animated.View>
-      </View>
+      </ScrollView>
     </>
   );
 }
@@ -474,10 +480,14 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semibold,
   },
 
+  // ── Playing ──
+  playingContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingBottom: Spacing.xxl,
+  },
   // ── Question ──
   questionWrap: {
-    flex: 1,
-    justifyContent: 'center',
     paddingVertical: Spacing.lg,
   },
   questionText: {

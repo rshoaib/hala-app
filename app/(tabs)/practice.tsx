@@ -11,11 +11,14 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Colors, Spacing, FontSize, BorderRadius, Shadows } from '@/constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  Colors, Spacing, FontSize, FontWeight, FontFamily,
+  BorderRadius, Shadows, ClayStyle,
+} from '@/constants/theme';
 import * as Storage from '@/services/storageService';
 import { speakArabic } from '@/services/speechService';
 
@@ -34,6 +37,7 @@ const DAILY_WORDS = [
 
 export default function PracticeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [dailyChallengeCompleted, setDailyChallengeCompleted] = useState(false);
   const [totalPhrases, setTotalPhrases] = useState(0);
 
@@ -105,13 +109,14 @@ export default function PracticeScreen() {
   ];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 120 }}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Word of the Day — with Audio */}
       <View style={styles.wordOfDay}>
-        <LinearGradient
-          colors={[Colors.card, Colors.cardElevated]}
-          style={styles.wordOfDayGradient}
-        >
+        <View style={styles.wordOfDayInner}>
           <View style={styles.wordOfDayHeader}>
             <Text style={styles.wordOfDayLabel}>📌 Word of the Day</Text>
             <TouchableOpacity
@@ -126,7 +131,7 @@ export default function PracticeScreen() {
           <Text style={styles.wordOfDayTranslit}>{todayWord.translit}</Text>
           <Text style={styles.wordOfDayMeaning}>{todayWord.meaning}</Text>
           <Text style={styles.wordOfDayExample}>{todayWord.example}</Text>
-        </LinearGradient>
+        </View>
       </View>
 
       {/* Practice Modules */}
@@ -134,25 +139,22 @@ export default function PracticeScreen() {
       {practiceModules.map((module) => (
         <TouchableOpacity
           key={module.id}
-          style={[styles.moduleCard, module.disabled && styles.moduleDisabled]}
+          style={[
+            styles.moduleCard,
+            { backgroundColor: module.gradient[0] },
+            module.disabled && styles.moduleDisabled,
+          ]}
           activeOpacity={module.disabled ? 1 : 0.8}
           onPress={module.onPress}
         >
-          <LinearGradient
-            colors={[...module.gradient]}
-            style={styles.moduleGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.moduleContent}>
-              <Text style={styles.moduleEmoji}>{module.emoji}</Text>
-              <View style={styles.moduleText}>
-                <Text style={styles.moduleTitle}>{module.title}</Text>
-                <Text style={styles.moduleDescription}>{module.description}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.6)" />
+          <View style={styles.moduleContent}>
+            <Text style={styles.moduleEmoji}>{module.emoji}</Text>
+            <View style={styles.moduleText}>
+              <Text style={styles.moduleTitle}>{module.title}</Text>
+              <Text style={styles.moduleDescription}>{module.description}</Text>
             </View>
-          </LinearGradient>
+            <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.6)" />
+          </View>
         </TouchableOpacity>
       ))}
 
@@ -195,7 +197,6 @@ export default function PracticeScreen() {
         </View>
       </View>
 
-      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
@@ -207,14 +208,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
   },
   wordOfDay: {
+    ...ClayStyle.card,
     marginTop: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    borderWidth: 1,
     borderColor: Colors.primary + '30',
-    ...Shadows.card,
   },
-  wordOfDayGradient: {
+  wordOfDayInner: {
     padding: Spacing.lg,
     alignItems: 'center',
   },
@@ -229,7 +227,8 @@ const styles = StyleSheet.create({
   wordOfDayLabel: {
     color: Colors.primary,
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontWeight: FontWeight.semibold,
+    fontFamily: FontFamily.semibold,
   },
   speakButton: {
     width: 36,
@@ -244,7 +243,8 @@ const styles = StyleSheet.create({
   wordOfDayArabic: {
     color: Colors.text,
     fontSize: FontSize.arabicHero,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
   },
   wordOfDayTranslit: {
     color: Colors.primaryLight,
@@ -255,7 +255,8 @@ const styles = StyleSheet.create({
   wordOfDayMeaning: {
     color: Colors.text,
     fontSize: FontSize.lg,
-    fontWeight: '600',
+    fontWeight: FontWeight.semibold,
+    fontFamily: FontFamily.semibold,
     marginTop: Spacing.sm,
   },
   wordOfDayExample: {
@@ -268,7 +269,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: Colors.text,
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
     marginTop: Spacing.lg,
     marginBottom: Spacing.sm,
   },
@@ -280,15 +282,17 @@ const styles = StyleSheet.create({
   },
   moduleCard: {
     borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
+    padding: Spacing.lg,
     marginBottom: Spacing.sm,
+    borderWidth: 2,
+    borderTopColor: 'rgba(255,255,255,0.3)',
+    borderBottomColor: 'rgba(0,0,0,0.12)',
+    borderLeftColor: 'rgba(255,255,255,0.15)',
+    borderRightColor: 'rgba(0,0,0,0.06)',
     ...Shadows.card,
   },
   moduleDisabled: {
     opacity: 0.7,
-  },
-  moduleGradient: {
-    padding: Spacing.lg,
   },
   moduleContent: {
     flexDirection: 'row',
@@ -304,7 +308,8 @@ const styles = StyleSheet.create({
   moduleTitle: {
     color: '#FFF',
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
   },
   moduleDescription: {
     color: 'rgba(255,255,255,0.7)',
@@ -333,7 +338,8 @@ const styles = StyleSheet.create({
   categoryTitle: {
     color: Colors.text,
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontWeight: FontWeight.semibold,
+    fontFamily: FontFamily.semibold,
     textAlign: 'center',
   },
   categoryCount: {
@@ -353,7 +359,8 @@ const styles = StyleSheet.create({
   statsTitle: {
     color: Colors.text,
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.bold,
     marginBottom: Spacing.md,
   },
   statsRow: {
@@ -366,7 +373,8 @@ const styles = StyleSheet.create({
   statsNumber: {
     color: Colors.primary,
     fontSize: FontSize.xxl,
-    fontWeight: '800',
+    fontWeight: FontWeight.black,
+    fontFamily: FontFamily.black,
   },
   statsLabel: {
     color: Colors.textSecondary,
