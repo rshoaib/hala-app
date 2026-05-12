@@ -2,26 +2,18 @@
   "expo": {
     "name": "Hala - Learn Emirati Arabic",
     "slug": "hala-emirati-arabic",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "hala",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#FBF7F0"
     },
     "ios": {
-      "supportsTablet": true,
-      "infoPlist": {
-        "UIBackgroundModes": [
-          "audio",
-          "fetch",
-          "remote-notification"
-        ]
-      }
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
@@ -30,12 +22,10 @@
       },
       "permissions": [
         "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED",
-        "FOREGROUND_SERVICE"
+        "RECEIVE_BOOT_COMPLETED"
       ],
       "package": "com.hala.emirati.arabic",
-      "versionCode": 8,
-      "usesCleartextTraffic": true
+      "versionCode": 9
     },
     "web": {
       "bundler": "metro",
@@ -53,27 +43,14 @@
           "backgroundColor": "#FBF7F0"
         }
       ],
+      "expo-font",
       [
         "expo-notifications",
         {
           "icon": "./assets/images/icon.png",
-          "color": "#C6A962"
+          "color": "#D4A328"
         }
-      ],
-      [
-        "react-native-google-mobile-ads",
-        {
-          "androidAppId": "ca-app-pub-3166995085202346~5895363790",
-          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
-        }
-      ],
-      [
-        "expo-av",
-        {
-          "microphonePermission": false
-        }
-      ],
-      "expo-font"
+      ]
     ],
     "experiments": {
       "typedRoutes": true

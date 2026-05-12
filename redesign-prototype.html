@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hala 2.0 — Redesign Prototype</title>
+<style>
+  :root {
+    --bg: #FAF6EF;
+    --surface: #FFFFFF;
+    --ink: #1F1A12;
+    --ink-soft: #6B5E4C;
+    --primary: #C9872A;
+    --primary-ink: #FFF8EC;
+    --accent: #2E7D5B;
+    --danger: #C25450;
+    --line: #EEE6D4;
+    --shadow: 0 1px 0 #EADFC7, 0 8px 24px rgba(201,135,42,0.08);
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; background:#2b2520; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Nunito, system-ui, sans-serif; color: var(--ink); }
+  .stage {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+    gap: 20px;
+  }
+  .stage h1 { color:#FAF6EF; font-weight:800; font-size:20px; margin:0; }
+  .stage p.lede { color:#BFAE90; max-width: 640px; text-align:center; margin:0 0 8px; font-size:14px; line-height:1.5;}
+  .phones {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 360px));
+    gap: 24px;
+    justify-content: center;
+    width: 100%;
+    max-width: 1200px;
+  }
+  .phone {
+    width: 360px;
+    height: 760px;
+    background: var(--bg);
+    border-radius: 36px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.35), 0 0 0 8px #1a1611;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .notch {
+    height: 28px;
+    background: #1a1611;
+    border-bottom-left-radius: 18px;
+    border-bottom-right-radius: 18px;
+    width: 120px;
+    margin: 0 auto;
+    position: relative;
+    top: 0;
+  }
+  .statusbar {
+    height: 36px; padding: 8px 20px 0;
+    display:flex; justify-content:space-between; align-items:center;
+    font-size: 13px; font-weight: 700; color: var(--ink);
+  }
+  .screen {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px 20px 100px;
+    position: relative;
+  }
+  .screen::-webkit-scrollbar { display:none; }
+
+  .tabbar {
+    position: absolute;
+    left: 12px; right: 12px; bottom: 14px;
+    background: var(--surface);
+    border-radius: 24px;
+    height: 64px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    box-shadow: var(--shadow);
+    z-index: 10;
+    border: 1px solid var(--line);
+  }
+  .tabbar button {
+    background: transparent;
+    border: 0;
+    font: inherit;
+    color: var(--ink-soft);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+  }
+  .tabbar button .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: transparent;
+  }
+  .tabbar button.active { color: var(--primary); }
+  .tabbar button.active .dot { background: var(--primary); }
+  .tabbar svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  .label { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; }
+  .h1 { font-size: 26px; font-weight: 800; margin: 2px 0 6px; letter-spacing: -0.5px; }
+  .h2 { font-size: 18px; font-weight: 800; margin: 18px 0 10px; }
+  .sub { color: var(--ink-soft); font-size: 14px; line-height: 1.45; }
+
+  .streak-hero {
+    background: linear-gradient(135deg, #FFE9C2, #F6C77A);
+    border-radius: var(--radius);
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+  }
+  .streak-flame {
+    font-size: 42px;
+    filter: drop-shadow(0 4px 8px rgba(201,135,42,0.35));
+  }
+  .streak-num { font-size: 32px; font-weight: 800; line-height:1; }
+  .streak-cap { font-size: 12px; color: #6B4A16; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .streak-freeze { margin-left: auto; font-size: 12px; background: rgba(255,255,255,0.6); padding: 6px 10px; border-radius: 999px; color: #6B4A16; font-weight: 700; }
+
+  .week-dots { display: flex; gap: 6px; margin: 14px 0 0; }
+  .dot-day { flex:1; height: 6px; border-radius: 3px; background: var(--line); }
+  .dot-day.done { background: var(--primary); }
+  .dot-day.today { background: var(--ink); }
+
+  .cta {
+    width: 100%;
+    background: var(--ink);
+    color: var(--primary-ink);
+    border: 0;
+    border-radius: 20px;
+    padding: 22px 20px;
+    font: inherit;
+    font-weight: 800;
+    font-size: 17px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    box-shadow: var(--shadow);
+    transition: transform .08s ease;
+  }
+  .cta:active { transform: translateY(1px); }
+  .cta small { font-size: 12px; opacity: 0.75; font-weight: 600; letter-spacing: 0.3px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+  }
+  .row { display:flex; align-items:center; gap: 12px; }
+  .row.between { justify-content: space-between; }
+
+  .arabic {
+    font-size: 30px; font-weight: 800; direction: rtl; font-family: "Amiri", "Scheherazade New", "Times New Roman", serif;
+  }
+  .translit { color: var(--ink-soft); font-style: italic; font-size: 13px; margin-top: 4px;}
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #F2EADB; color: var(--ink);
+    padding: 6px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+  }
+  .chip.green { background: #E3F1E6; color: #2E7D5B; }
+  .chip.red { background: #FBE6E4; color: #C25450; }
+
+  /* Session player */
+  .session-wrap {
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 16px;
+    height: 100%;
+  }
+  .progress-top { display:flex; align-items:center; gap:10px; }
+  .progress-bar { flex:1; height:6px; background: var(--line); border-radius:3px; overflow:hidden; }
+  .progress-bar > span { display:block; height:100%; background: var(--primary); width: 35%; border-radius: 3px; }
+  .close-x { width:32px; height:32px; border-radius:50%; background: var(--surface); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--ink-soft); cursor:pointer;}
+
+  .flashcard {
+    background: var(--surface);
+    border-radius: 24px;
+    border: 1px solid var(--line);
+    padding: 28px 22px;
+    box-shadow: var(--shadow);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+    min-height: 360px;
+  }
+  .flashcard .type-tag { font-size: 11px; letter-spacing:1.2px; font-weight:800; color: var(--primary); text-transform:uppercase; }
+  .flashcard .big-arabic { font-size: 54px; font-weight: 800; direction: rtl; line-height: 1.1; }
+  .flashcard .audio-btn {
+    width: 56px; height:56px; border-radius:50%;
+    background: var(--primary); color:#fff;
+    border:0; font-size: 22px; cursor:pointer;
+    box-shadow: var(--shadow);
+  }
+  .flashcard .hint { color: var(--ink-soft); font-size: 13px; }
+  .flashcard .reveal { color: var(--accent); font-weight: 800; font-size: 20px; }
+
+  .rate-row { display:grid; grid-template-columns: repeat(4,1fr); gap:8px; }
+  .rate-row button {
+    border:1px solid var(--line);
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 12px 4px;
+    font: inherit;
+    font-weight: 800;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex; flex-direction: column; gap: 2px; align-items: center;
+  }
+  .rate-row button small { font-weight: 600; color: var(--ink-soft); font-size: 10px; }
+  .rate-row .again { color: var(--danger); }
+  .rate-row .hard { color: #B27A1E; }
+  .rate-row .good { color: var(--accent); }
+  .rate-row .easy { color: #2B6BB2; }
+
+  /* Library */
+  .search {
+    width:100%; padding: 14px 16px; border-radius: 14px;
+    border: 1px solid var(--line); background: var(--surface);
+    font: inherit; font-size: 14px;
+  }
+  .theme-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .theme-tile {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+  }
+  .theme-tile .emoji { font-size: 26px; }
+  .theme-tile .name { font-weight: 800; margin-top: 6px; }
+  .theme-tile .meta { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+
+  /* You */
+  .stack-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+  }
+  .stat-num { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .stat-lab { font-size: 11px; text-transform: uppercase; color: var(--ink-soft); letter-spacing: 1px; font-weight: 800; margin-top: 2px; }
+
+  .caption { color:#BFAE90; font-size: 12px; text-align: center; margin-top: 8px; }
+  .kill { color: var(--danger); text-decoration: line-through; }
+  .keep { color: var(--accent); }
+
+  /* hidden screens */
+  .screen-body { display: none; }
+  .screen-body.active { display: block; }
+
+  .annotate {
+    font-size: 11px; color: #9E8B6A; text-align:center; margin-top: 6px;
+  }
+
+  /* footer compare */
+  .compare {
+    max-width: 1100px;
+    background: #1a1611;
+    color: #DDD1B8;
+    border-radius: 18px;
+    padding: 22px 26px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .compare h3 { margin:0 0 10px; color: #F6C77A; font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase;}
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .compare ul { margin: 0; padding-left: 18px; }
+  .compare li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <h1>Hala 2.0 — Redesign Prototype</h1>
+  <p class="lede">Three tabs, one core loop, spaced-repetition at the heart. Click the tab bar inside each phone to explore. The middle phone is the session player — the screen the user sees most.</p>
+
+  <div class="phones">
+
+    <!-- PHONE 1: Tab navigation with Today / Library / You -->
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar"><span>9:41</span><span>◉ ◉ ◉</span></div>
+      <div class="screen" id="screen-tabs">
+
+        <!-- TODAY -->
+        <div class="screen-body active" data-screen="today">
+          <div class="label">Tuesday · April 14</div>
+          <div class="h1">Good morning, Rizwan</div>
+
+          <div class="streak-hero">
+            <div class="streak-flame">🔥</div>
+            <div>
+              <div class="streak-num">23</div>
+              <div class="streak-cap">day streak</div>
+            </div>
+            <div class="streak-freeze">❄ 1 freeze</div>
+          </div>
+          <div class="week-dots">
+            <div class="dot-day done"></div>
+            <div class="dot-day done"></div>
+            <div class="dot-day done"></div>
+            <div class="dot-day done"></div>
+            <div class="dot-day today"></div>
+            <div class="dot-day"></div>
+            <div class="dot-day"></div>
+          </div>
+
+          <div style="margin-top: 22px;">
+            <button class="cta" onclick="openSession()">
+              Start today's session
+              <small>12 cards · ~5 min · 5 new + 7 review</small>
+            </button>
+          </div>
+
+          <div class="h2">Phrase of the day</div>
+          <div class="card">
+            <div class="arabic">هلا والله</div>
+            <div class="translit">hala wallah</div>
+            <div class="sub" style="margin-top:6px">"Hello / Welcome" — the warm greeting that names this app.</div>
+            <div class="row" style="margin-top:10px;">
+              <span class="chip">🔊 Listen</span>
+              <span class="chip green">Added to stack</span>
+            </div>
+          </div>
+
+          <div class="h2">Quick listen</div>
+          <div class="card">
+            <div class="row between">
+              <div>
+                <div style="font-weight:800">30-second audio</div>
+                <div class="sub">Emirati café conversation</div>
+              </div>
+              <button class="close-x" style="background:var(--primary);color:#fff;border:0;width:44px;height:44px;font-size:18px;">▶</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- LIBRARY -->
+        <div class="screen-body" data-screen="library">
+          <div class="label">Library</div>
+          <div class="h1">Browse everything</div>
+          <input class="search" placeholder="Search words, phrases, topics…" />
+          <div class="h2">Themes</div>
+          <div class="theme-grid">
+            <div class="theme-tile"><div class="emoji">☕</div><div class="name">Café & food</div><div class="meta">32 cards · 18 learned</div></div>
+            <div class="theme-tile"><div class="emoji">🛍️</div><div class="name">Shopping</div><div class="meta">24 cards · 4 learned</div></div>
+            <div class="theme-tile"><div class="emoji">👋</div><div class="name">Greetings</div><div class="meta">18 cards · 18 ✓</div></div>
+            <div class="theme-tile"><div class="emoji">🚕</div><div class="name">Getting around</div><div class="meta">20 cards</div></div>
+            <div class="theme-tile"><div class="emoji">🕌</div><div class="name">Culture</div><div class="meta">14 cards</div></div>
+            <div class="theme-tile"><div class="emoji">🔤</div><div class="name">Alphabet</div><div class="meta">28 letters · 12 learned</div></div>
+          </div>
+
+          <div class="h2">⭐ Saved</div>
+          <div class="card">
+            <div class="row between">
+              <div>
+                <div class="arabic" style="font-size:22px">شخبارك</div>
+                <div class="translit">shakhbarak · "how are you?"</div>
+              </div>
+              <span class="chip">Due tomorrow</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="row between">
+              <div>
+                <div class="arabic" style="font-size:22px">يلّا</div>
+                <div class="translit">yalla · "let's go!"</div>
+              </div>
+              <span class="chip green">Known</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- YOU -->
+        <div class="screen-body" data-screen="you">
+          <div class="label">Your stack</div>
+          <div class="h1">Rizwan</div>
+
+          <div class="streak-hero">
+            <div class="streak-flame">🔥</div>
+            <div>
+              <div class="streak-num">23</div>
+              <div class="streak-cap">current · best 41</div>
+            </div>
+            <div class="streak-freeze">❄ 1 freeze</div>
+          </div>
+
+          <div class="h2">This month</div>
+          <div class="stack-grid">
+            <div class="stat-card"><div class="stat-num">142</div><div class="stat-lab">cards learned</div></div>
+            <div class="stat-card"><div class="stat-num">1,845</div><div class="stat-lab">xp</div></div>
+            <div class="stat-card"><div class="stat-num">18/20</div><div class="stat-lab">days active</div></div>
+            <div class="stat-card"><div class="stat-num">92%</div><div class="stat-lab">recall rate</div></div>
+          </div>
+
+          <div class="h2">Daily goal</div>
+          <div class="card">
+            <div class="row between">
+              <div>
+                <div style="font-weight:800">12 cards / day</div>
+                <div class="sub">~5 minutes · reminds you at 8:00 AM</div>
+              </div>
+              <span class="chip">Edit</span>
+            </div>
+          </div>
+
+          <div class="h2">Settings</div>
+          <div class="card sub">Notifications · Sound · Account · About</div>
+        </div>
+
+      </div>
+
+      <div class="tabbar">
+        <button class="active" data-tab="today" onclick="switchTab(this,'today')">
+          <svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 21V12h6v9"/></svg>
+          Today
+          <span class="dot"></span>
+        </button>
+        <button data-tab="library" onclick="switchTab(this,'library')">
+          <svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v6h6"/></svg>
+          Library
+          <span class="dot"></span>
+        </button>
+        <button data-tab="you" onclick="switchTab(this,'you')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+          You
+          <span class="dot"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- PHONE 2: Session player (the main screen) -->
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar"><span>9:43</span><span>◉ ◉ ◉</span></div>
+      <div class="session-wrap">
+        <div class="progress-top">
+          <div class="close-x" title="Close">✕</div>
+          <div class="progress-bar"><span id="pbar"></span></div>
+          <div style="font-weight:800; font-size: 13px;">4 / 12</div>
+        </div>
+
+        <div class="flashcard" id="card">
+          <div class="type-tag">VOCAB · TAP TO REVEAL</div>
+          <div class="big-arabic">فلوس</div>
+          <button class="audio-btn" title="Play audio">🔊</button>
+          <div class="translit">fulūs</div>
+          <div class="hint" id="hint">What does this mean?</div>
+          <div class="reveal" id="reveal" style="display:none">Money</div>
+        </div>
+
+        <div class="rate-row" id="rate" style="display:none">
+          <button class="again" onclick="nextCard()">Again<small>1 min</small></button>
+          <button class="hard" onclick="nextCard()">Hard<small>1 day</small></button>
+          <button class="good" onclick="nextCard()">Good<small>4 days</small></button>
+          <button class="easy" onclick="nextCard()">Easy<small>10 days</small></button>
+        </div>
+
+        <button class="cta" id="revealBtn" onclick="revealCard()" style="background: var(--primary); color:#fff;">
+          Reveal answer
+          <small>Try to recall before tapping</small>
+        </button>
+      </div>
+    </div>
+
+    <!-- PHONE 3: Session end + Onboarding (shows both stacked) -->
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar"><span>9:48</span><span>◉ ◉ ◉</span></div>
+      <div class="screen" style="padding-bottom:24px">
+        <div class="label">Session complete</div>
+        <div class="h1">Nice work 🎉</div>
+
+        <div class="card" style="background: linear-gradient(135deg,#E3F1E6,#C8E6CE); border-color:#B7D9BF;">
+          <div class="row between">
+            <div>
+              <div class="streak-cap" style="color:#2E7D5B">Streak extended</div>
+              <div class="streak-num" style="color:#1F4A2E">24 🔥</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="stat-num" style="color:#1F4A2E;">+120</div>
+              <div class="stat-lab" style="color:#2E7D5B">xp</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stack-grid" style="margin-top:12px;">
+          <div class="stat-card"><div class="stat-num">12</div><div class="stat-lab">cards done</div></div>
+          <div class="stat-card"><div class="stat-num">5</div><div class="stat-lab">new learned</div></div>
+          <div class="stat-card"><div class="stat-num">83%</div><div class="stat-lab">recall today</div></div>
+          <div class="stat-card"><div class="stat-num">8</div><div class="stat-lab">due tomorrow</div></div>
+        </div>
+
+        <div class="h2">Onboarding (v2.0) — 60 seconds, 4 steps</div>
+        <div class="card">
+          <div style="font-weight:800;">1. What will you say first?</div>
+          <div class="sub">Travel · Make friends · Work · Just curious</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:800;">2. Minutes per day?</div>
+          <div class="sub">3 (8 cards) · 5 (12 cards) · 10 (20 cards)</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:800;">3. When will you practice?</div>
+          <div class="sub">Morning · Lunch · Evening <span class="chip" style="margin-left:4px">implementation intention</span></div>
+        </div>
+        <div class="card" style="background:#FFF6E3;border-color:#F2D896">
+          <div style="font-weight:800;">4. Show the first card immediately.</div>
+          <div class="sub">No tour, no tutorial — the card teaches the interaction.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison footer -->
+  <div class="compare">
+    <h3>What changed</h3>
+    <div class="compare-grid">
+      <div>
+        <div style="color:#F6C77A; font-weight:800; margin-bottom:6px;">Cut (deleted, not hidden)</div>
+        <ul>
+          <li class="kill">ai-tutor · ai-quiz · arcade · boss-battle</li>
+          <li class="kill">challenge · mission path · vocabulary screen</li>
+          <li class="kill">alphabet tab · radio tab · progress tab · practice tab · play tab · learn tab</li>
+          <li class="kill">leaderboards / leagues (would have added later)</li>
+        </ul>
+      </div>
+      <div>
+        <div style="color:#B7D9BF; font-weight:800; margin-bottom:6px;">Kept & reshaped</div>
+        <ul>
+          <li class="keep">Flashcard engine → unified SRS session player</li>
+          <li class="keep">Alphabet + vocab + phrases → one card pool, interleaved</li>
+          <li class="keep">Streak + weekly dots + freezes → the spine of the "stack"</li>
+          <li class="keep">Radio → one "listen" card inside the daily session</li>
+          <li class="keep">Onboarding → compressed to 60s, ends with implementation intention</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:12px; color:#8B7A58;">Core loop: <b style="color:#F6C77A;">Ebbinghaus spaced repetition</b> · <b style="color:#F6C77A;">testing effect</b> · <b style="color:#F6C77A;">streak loss-aversion</b>. Every other mechanic has to earn its way back in v2.1.</p>
+  </div>
+</div>
+
+<script>
+  function switchTab(btn, name) {
+    document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.screen-body').forEach(s=>s.classList.remove('active'));
+    document.querySelector('[data-screen="'+name+'"]').classList.add('active');
+    document.getElementById('screen-tabs').scrollTop = 0;
+  }
+  function openSession() {
+    // scroll user's attention to the middle phone
+    document.querySelectorAll('.phone')[1].scrollIntoView({behavior:'smooth', block:'center', inline:'center'});
+  }
+  let revealed = false;
+  let idx = 4;
+  function revealCard() {
+    document.getElementById('hint').style.display='none';
+    document.getElementById('reveal').style.display='block';
+    document.getElementById('rate').style.display='grid';
+    document.getElementById('revealBtn').style.display='none';
+    revealed = true;
+  }
+  const cards = [
+    {type:'VOCAB · TAP TO REVEAL', arabic:'فلوس', translit:'fulūs', meaning:'Money'},
+    {type:'PHRASE · TAP TO REVEAL', arabic:'مشكور', translit:'mashkoor', meaning:'Thank you'},
+    {type:'LISTEN · TAP TO REVEAL', arabic:'🔊', translit:'audio clip', meaning:'"It\'s okay — no worries"'},
+    {type:'PRODUCE · TAP TO REVEAL', arabic:'[ English: tomorrow ]', translit:'recall the Arabic', meaning:'باجر · bājir'},
+    {type:'CULTURAL · TAP TO REVEAL', arabic:'☕', translit:'offered gahwa', meaning:'Accept the first cup, refuse politely after three'},
+  ];
+  function nextCard() {
+    idx = (idx+1) % cards.length;
+    const c = cards[idx];
+    document.querySelector('.type-tag').textContent = c.type;
+    document.querySelector('.big-arabic').textContent = c.arabic;
+    document.querySelector('.translit').textContent = c.translit;
+    document.getElementById('reveal').textContent = c.meaning;
+    document.getElementById('hint').style.display='block';
+    document.getElementById('reveal').style.display='none';
+    document.getElementById('rate').style.display='none';
+    document.getElementById('revealBtn').style.display='flex';
+    const pct = Math.min(100, ((idx+1)/12)*100);
+    document.getElementById('pbar').style.width = pct + '%';
+    document.querySelector('.progress-top div:last-child').textContent = (idx+1)+' / 12';
+  }
+</script>
+</body>
+</html>

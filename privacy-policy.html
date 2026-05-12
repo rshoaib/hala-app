@@ -3,36 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy — Hala: Learn Emirati Arabic</title>
+    <title>Privacy Policy — Hala - Learn Emirati Arabic</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #F6F7FB; color: #5A5F7D; padding: 24px; line-height: 1.7;
+            background: #FBF7F0; color: #3D3024; padding: 24px; line-height: 1.7;
         }
         .container { max-width: 720px; margin: 0 auto; }
-        h1 { color: #1E2340; font-size: 28px; margin-bottom: 8px; }
-        h2 { color: #1E2340; font-size: 20px; margin-top: 28px; margin-bottom: 8px; }
+        h1 { color: #3D3024; font-size: 28px; margin-bottom: 8px; }
+        h2 { color: #3D3024; font-size: 20px; margin-top: 28px; margin-bottom: 8px; }
         p, li { margin-bottom: 10px; }
         ul { padding-left: 20px; }
-        .badge { display: inline-block; background: rgba(212, 163, 40, 0.1); color: #D4A328; padding: 4px 12px; border-radius: 99px; font-size: 13px; margin-bottom: 20px; font-weight: 600; }
-        a { color: #D4A328; }
-        strong { color: #1E2340; }
-        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(223, 225, 238, 0.6); font-size: 13px; color: #9CA3C4; }
+        .badge { display: inline-block; background: #C6A96220; color: #96792F; padding: 4px 12px; border-radius: 99px; font-size: 13px; margin-bottom: 20px; }
+        a { color: #C6A962; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #E5DDD0; font-size: 13px; color: #8B7355; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>&#127462;&#127466; Hala: Learn Emirati Arabic — Privacy Policy</h1>
-        <span class="badge">Last updated: April 6, 2026</span>
+        <h1>Hala - Learn Emirati Arabic — Privacy Policy</h1>
+        <span class="badge">Last updated: April 10, 2026</span>
 
         <h2>Introduction</h2>
         <p>Hala - Learn Emirati Arabic ("we", "our", "the app") is a language learning app developed and published by <strong>OVC Tech</strong>. We take your privacy seriously. This policy explains what data we access, why, and how it's handled.</p>
 
         <h2>Data We Access</h2>
         <ul>
-            <li><strong>AI Chat Messages</strong> — When you use the optional AI Tutor or AI Quiz features, your messages are sent to Google Gemini API for processing. These messages are not stored by us. Google's data handling is governed by their <a href="https://ai.google.dev/terms" target="_blank">Generative AI Terms</a>.</li>
-            <li><strong>Text-to-Speech</strong> — The app uses your device's built-in speech engine to pronounce Arabic phrases. This is processed entirely on your device.</li>
+            <li><strong>Google Gemini AI</strong> — We use Google's Generative AI API to generate quiz questions for the AI Quiz and Boss Battle features. Only generic lesson content (phrases and vocabulary) is sent to the API to generate questions. No personal data is transmitted.</li>
         </ul>
 
         <h2>Data We Do NOT Collect</h2>
@@ -47,52 +45,54 @@
         <h2>Local Storage</h2>
         <p>The app stores the following data locally on your device using AsyncStorage:</p>
         <ul>
-            <li>Learning progress and completed missions</li>
-            <li>Streak data and daily activity log</li>
-            <li>XP (experience points) and level</li>
-            <li>Daily challenge completion status</li>
-            <li>Flashcard confidence ratings</li>
-            <li>Daily goal and notification preferences</li>
-            <li>Coins balance</li>
+            <li>Learning progress (completed lessons, missions, XP)</li>
+            <li>Streak data and daily activity</li>
+            <li>Daily and weekly challenge progress</li>
+            <li>Flashcard review history</li>
+            <li>Listening time statistics</li>
+            <li>Settings and preferences (daily goal, Arabic text size, notifications)</li>
+            <li>Coins and achievement data</li>
         </ul>
         <p>This data never leaves your device. You can clear it at any time by clearing the app's data in your device settings.</p>
 
         <h2>Third-Party Services</h2>
         <ul>
-            <li><strong>Google AdMob</strong> — We display advertisements powered by Google AdMob. Google may collect data as described in <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a>. You can opt out of personalized ads in your device settings.</li>
-            <li><strong>Google Gemini API</strong> — Optional AI features (Tutor, Quiz) use Google's Gemini API. Only your chat messages are sent; no personal data is transmitted. See <a href="https://ai.google.dev/terms" target="_blank">Google AI Terms</a>.</li>
-            <li><strong>Expo</strong> — The app is built with Expo framework. Expo may handle push notification delivery if notifications are enabled.</li>
+            <li><strong>Google AdMob</strong> — We display ads powered by Google AdMob. Google may collect data as described in <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a>. You can opt out of personalized ads in your device settings.</li>
+            <li><strong>Google Generative AI (Gemini)</strong> — Used to generate quiz questions. Only lesson content is sent; no personal data is transmitted. See <a href="https://ai.google.dev/terms" target="_blank">Google AI Terms</a>.</li>
+            <li><strong>Expo</strong> — The app framework used for push notifications. See <a href="https://expo.dev/privacy" target="_blank">Expo's Privacy Policy</a>.</li>
         </ul>
 
         <h2>Permissions</h2>
         <ul>
-            <li><strong>Notifications</strong> — Optional. Used for daily learning reminders and word-of-the-day notifications.</li>
-            <li><strong>Internet</strong> — Required for AI features and advertisements. Core learning features work offline.</li>
+            <li><strong>Notifications</strong> — Optional. Used for daily practice reminders and challenge alerts.</li>
+            <li><strong>Vibration</strong> — Used for haptic feedback during quizzes and games.</li>
+            <li><strong>Internet</strong> — Required for AI-generated quizzes and displaying ads.</li>
         </ul>
 
-        <h2>Data Retention & Deletion</h2>
+        <h2>Data Retention &amp; Deletion</h2>
         <p>All user data is stored <strong>locally on your device only</strong>. We do not store any of your data on external servers, so there is no server-side data to retain or delete.</p>
-        <p><strong>How long we retain data:</strong> Local data (learning progress, settings, preferences) is kept on your device for as long as the app is installed. There is no expiration — data persists until you choose to delete it.</p>
+        <p><strong>How long we retain data:</strong> Local data (learning progress, streaks, preferences) is kept on your device for as long as the app is installed. There is no expiration — data persists until you choose to delete it.</p>
         <p><strong>How to delete your data:</strong></p>
         <ul>
-            <li>Go to your device's <strong>Settings > Apps > Hala > Storage > Clear Data</strong> to erase all locally stored app data.</li>
+            <li>Go to your device's <strong>Settings &rarr; Apps &rarr; Hala &rarr; Storage &rarr; Clear Data</strong> to erase all locally stored app data.</li>
+            <li>You can also use the "Reset All Progress" option in the app's Settings screen.</li>
             <li>Uninstalling the app will also permanently delete all associated data from your device.</li>
         </ul>
-        <p>Since we do not collect or store any data on our servers, no further action is needed to delete your information. If you have any concerns, contact us at <a href="mailto:support@ovctech.com">support@ovctech.com</a>.</p>
+        <p>Since we do not collect or store any data on our servers, no further action is needed to delete your information. If you have any concerns, contact us at <a href="mailto:segmentbi@gmail.com">segmentbi@gmail.com</a>.</p>
 
         <h2>Children's Privacy</h2>
-        <p>Our app does not knowingly collect data from children under 13. The app is suitable for all ages and collects no personal information.</p>
+        <p>Our app does not knowingly collect data from children under 13. The app is suitable for all ages and does not require any personal information to use.</p>
 
         <h2>Changes to This Policy</h2>
         <p>We may update this policy from time to time. The updated version will be indicated by the "Last updated" date at the top.</p>
 
         <h2>Contact</h2>
         <p>If you have questions about this privacy policy, please contact us at:</p>
-        <p>&#128231; <a href="mailto:support@ovctech.com">support@ovctech.com</a></p>
+        <p><a href="mailto:segmentbi@gmail.com">segmentbi@gmail.com</a></p>
         <p><strong>Developer:</strong> OVC Tech</p>
 
         <div class="footer">
-            <p>&copy; 2026 Hala: Learn Emirati Arabic. All rights reserved.</p>
+            <p>&copy; 2026 Hala - Learn Emirati Arabic. All rights reserved.</p>
             <p>This privacy policy is hosted as part of the Hala application.</p>
         </div>
     </div>

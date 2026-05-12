@@ -1,61 +1,27 @@
 /**
- * Tab Layout — Desert Gold theme
- * 4 tabs: Home, Learn, Play, Profile
- * Custom floating tab bar with elevated Play button
+ * (tabs) layout — v3.0
+ *
+ * Single-screen app: the only live route in this group is `today` (the
+ * phrase browser, which is the home screen). `library` and `you` still
+ * exist on disk as redirect-to-/ stubs but they aren't registered here,
+ * so they're inert and unreachable through navigation.
  */
-import { Tabs } from 'expo-router';
+import { Stack } from 'expo-router';
 import { Colors } from '@/constants/theme';
-import FloatingTabBar from '@/components/FloatingTabBar';
 
-export default function TabLayout() {
+export const unstable_settings = {
+  initialRouteName: 'today',
+};
+
+export default function TabsLayout() {
   return (
-    <Tabs
-      tabBar={(props) => <FloatingTabBar {...props} />}
+    <Stack
       screenOptions={{
-        headerStyle: {
-          backgroundColor: Colors.background,
-        },
-        headerTintColor: Colors.text,
-        headerTitleStyle: {
-          fontWeight: '700',
-          fontSize: 18,
-          color: Colors.text,
-        },
-        headerShadowVisible: false,
+        headerShown: false,
+        contentStyle: { backgroundColor: Colors.background },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          headerShown: false,
-        }}
-      />
-      <Tabs.Screen
-        name="learn"
-        options={{
-          title: 'Learn',
-          headerShown: false,
-        }}
-      />
-      <Tabs.Screen
-        name="play"
-        options={{
-          title: 'Play',
-          headerShown: false,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          headerShown: false,
-        }}
-      />
-      {/* Hide old tabs from navigation */}
-      <Tabs.Screen name="practice" options={{ href: null }} />
-      <Tabs.Screen name="radio" options={{ href: null }} />
-      <Tabs.Screen name="progress" options={{ href: null }} />
-    </Tabs>
+      <Stack.Screen name="today" />
+    </Stack>
   );
 }

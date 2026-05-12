@@ -104,7 +104,9 @@ export const FontSize = {
   md: 15,
   lg: 18,
   xl: 22,
+  '2xl': 24,
   xxl: 28,
+  '3xl': 32,
   xxxl: 36,
   hero: 44,
   arabic: 28,
@@ -117,6 +119,7 @@ export const FontWeight = {
   medium: '500' as const,
   semibold: '600' as const,
   bold: '700' as const,
+  extraBold: '800' as const,
   black: '900' as const,
 };
 
@@ -194,6 +197,20 @@ export const Shadows = {
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.10,
     shadowRadius: 16,
+    elevation: 4,
+  },
+  sm: {
+    shadowColor: '#6B7194',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  md: {
+    shadowColor: '#6B7194',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
     elevation: 4,
   },
   tabBar: {

@@ -9,7 +9,7 @@ export default function NotFoundScreen() {
       <View style={styles.container}>
         <Text style={styles.emoji}>🤷</Text>
         <Text style={styles.title}>This screen doesn't exist.</Text>
-        <Link href="/" asChild>
+        <Link href="/today" asChild>
           <TouchableOpacity style={styles.button}>
             <Text style={styles.buttonText}>Go to home screen</Text>
           </TouchableOpacity>

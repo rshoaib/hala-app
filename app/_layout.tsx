@@ -1,6 +1,12 @@
 /**
- * Root Layout — Desert Gold Theme
- * Handles font loading, RTL, splash screen, navigation stack
+ * Root Layout — v3.1 (phrase browser + daily-phrase notification)
+ *
+ * Two real screens: home (the phrase browser, lives under the (tabs) group)
+ * and onboarding. Older screens still exist as redirect-to-/today stubs and
+ * are intentionally NOT registered here so they don't appear in navigation.
+ *
+ * On launch we (re-)schedule the daily-phrase local notification so it
+ * always reflects the user's most recently-picked level.
  */
 import { ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -15,12 +21,7 @@ import 'react-native-reanimated';
 
 import { HalaTheme, Colors } from '@/constants/theme';
 import AnimatedSplash from '@/components/AnimatedSplash';
-let setupDailyWordNotification: () => Promise<void> = async () => {};
-try {
-  setupDailyWordNotification = require('@/services/notificationService').setupDailyWordNotification;
-} catch (e) {
-  console.log('Notifications module not available');
-}
+import { scheduleDailyPhrase } from '@/services/notificationService';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -29,11 +30,6 @@ export const unstable_settings = {
 };
 
 SplashScreen.preventAutoHideAsync();
-
-// Shared header style for stack screens
-const stackHeaderStyle = {
-  backgroundColor: Colors.background,
-};
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -60,94 +56,36 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
-      setupDailyWordNotification().catch(console.error);
+      // Re-schedule on every app open so the notification always reflects
+      // the user's current level. Failures are swallowed inside the service.
+      scheduleDailyPhrase();
     }
   }, [loaded]);
 
-  if (!loaded) {
-    return null;
-  }
+  if (!loaded) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <RootLayoutNav />
+        <ThemeProvider value={HalaTheme}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: Colors.background },
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen
+              name="onboarding"
+              options={{ gestureEnabled: false }}
+            />
+          </Stack>
+          <StatusBar style="dark" />
+        </ThemeProvider>
         {showSplash && (
           <AnimatedSplash onFinish={() => setShowSplash(false)} />
         )}
       </SafeAreaProvider>
     </GestureHandlerRootView>
-  );
-}
-
-function RootLayoutNav() {
-  return (
-    <ThemeProvider value={HalaTheme}>
-      <Stack
-        screenOptions={{
-          headerStyle: stackHeaderStyle,
-          headerTintColor: Colors.text,
-          headerBackTitle: 'Back',
-          headerShadowVisible: false,
-          headerTitleStyle: { fontWeight: '700' },
-          contentStyle: { backgroundColor: Colors.background },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="mission/[id]"
-          options={{ headerTitle: '' }}
-        />
-        <Stack.Screen
-          name="alphabet"
-          options={{ headerTitle: 'Arabic Alphabet' }}
-        />
-        <Stack.Screen
-          name="flashcard"
-          options={{ headerTitle: 'Flashcards' }}
-        />
-        <Stack.Screen
-          name="challenge"
-          options={{ headerTitle: 'Daily Challenge' }}
-        />
-        <Stack.Screen
-          name="vocabulary"
-          options={{ headerTitle: 'Vocabulary' }}
-        />
-        <Stack.Screen
-          name="boss-battle"
-          options={{ headerTitle: 'Boss Battle' }}
-        />
-        <Stack.Screen
-          name="settings"
-          options={{ headerTitle: 'Settings' }}
-        />
-        <Stack.Screen
-          name="privacy"
-          options={{ headerTitle: 'Privacy Policy' }}
-        />
-        <Stack.Screen
-          name="arcade"
-          options={{
-            headerTitle: 'Arcade Mode',
-            headerStyle: { backgroundColor: Colors.accent },
-            headerTintColor: '#FFF',
-          }}
-        />
-        <Stack.Screen
-          name="ai-tutor"
-          options={{ headerTitle: 'AI Tutor' }}
-        />
-        <Stack.Screen
-          name="ai-quiz"
-          options={{ headerTitle: 'AI Quiz' }}
-        />
-        <Stack.Screen
-          name="onboarding"
-          options={{ headerShown: false, gestureEnabled: false }}
-        />
-      </Stack>
-      <StatusBar style="dark" />
-    </ThemeProvider>
   );
 }

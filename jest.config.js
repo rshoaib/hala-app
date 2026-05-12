@@ -16,7 +16,6 @@ module.exports = {
   collectCoverageFrom: [
     'data/**/*.ts',
     'services/**/*.ts',
-    'constants/aiConfig.ts',
     '!**/node_modules/**',
   ],
 };

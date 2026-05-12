@@ -53,3 +53,13 @@ __pycache__/
 # generated native folders
 /ios
 /android
+
+# Test coverage
+coverage/
+
+# Claude Code local state
+.claude/scheduled_tasks.lock
+.claude/worktrees/
+
+# Temp files
+*.tmp

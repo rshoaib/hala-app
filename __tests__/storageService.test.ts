@@ -1,6 +1,8 @@
 /**
- * Tests for Storage Service
- * Tests pure functions (getLevel) and AsyncStorage-backed functions
+ * Tests for Storage Service — v2.0
+ * Covers the pruned surface: XP, level, streak, daily goal, onboarding, reset.
+ * Features removed in v2.0 (coins, missions, alphabet progress, daily challenge,
+ * listening stats, manual freeze purchase) are no longer tested.
  */
 
 // Mock AsyncStorage before importing the service
@@ -28,12 +30,13 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 import * as Storage from '@/services/storageService';
 
 beforeEach(() => {
-  // Clear mock storage before each test
   Object.keys(mockStorage).forEach((key) => delete mockStorage[key]);
   jest.clearAllMocks();
 });
 
 // ─── getLevel() — Pure Function ──────────────────────
+// v2.0 thresholds: [0, 100, 300, 600, 1000, 1500, 2200, 3000, 4000, 5500, 7500]
+// Max level = 10 ("Arabic Master")
 
 describe('getLevel()', () => {
   test('0 XP = level 1, progress 0', () => {
@@ -57,7 +60,7 @@ describe('getLevel()', () => {
     expect(result.currentXP).toBe(0);
   });
 
-  test('200 XP = level 2, progress into level 3', () => {
+  test('200 XP = level 2, halfway to level 3', () => {
     const result = Storage.getLevel(200);
     expect(result.level).toBe(2);
     expect(result.currentXP).toBe(100);
@@ -66,41 +69,39 @@ describe('getLevel()', () => {
   });
 
   test('300 XP = level 3', () => {
-    const result = Storage.getLevel(300);
-    expect(result.level).toBe(3);
+    expect(Storage.getLevel(300).level).toBe(3);
   });
 
   test('600 XP = level 4', () => {
-    const result = Storage.getLevel(600);
-    expect(result.level).toBe(4);
+    expect(Storage.getLevel(600).level).toBe(4);
   });
 
   test('1000 XP = level 5', () => {
-    const result = Storage.getLevel(1000);
-    expect(result.level).toBe(5);
+    expect(Storage.getLevel(1000).level).toBe(5);
   });
 
-  test('10000 XP = max level 12', () => {
-    const result = Storage.getLevel(10000);
-    expect(result.level).toBe(12);
+  test('7500 XP = max level 11', () => {
+    const result = Storage.getLevel(7500);
+    expect(result.level).toBe(11);
     expect(result.progress).toBe(1.0);
   });
 
-  test('99999 XP = still max level 12', () => {
+  test('99999 XP = still max level 11', () => {
     const result = Storage.getLevel(99999);
-    expect(result.level).toBe(12);
+    expect(result.level).toBe(11);
     expect(result.progress).toBe(1.0);
   });
 
   test('level boundaries are correct', () => {
-    // Just below level 2 threshold
     expect(Storage.getLevel(99).level).toBe(1);
-    // Exactly at level 2 threshold
     expect(Storage.getLevel(100).level).toBe(2);
-    // Just below level 3
     expect(Storage.getLevel(299).level).toBe(2);
-    // Exactly at level 3
     expect(Storage.getLevel(300).level).toBe(3);
+  });
+
+  test('level title is returned', () => {
+    expect(Storage.getLevel(0).title).toBe('Newcomer');
+    expect(Storage.getLevel(7500).title).toBe('Arabic Master');
   });
 
   test('progress is always between 0 and 1', () => {
@@ -123,136 +124,26 @@ describe('getLevel()', () => {
 
 describe('XP functions', () => {
   test('getXP returns 0 when no XP stored', async () => {
-    const xp = await Storage.getXP();
-    expect(xp).toBe(0);
+    expect(await Storage.getXP()).toBe(0);
   });
 
   test('addXP adds to current XP and returns new total', async () => {
-    const result = await Storage.addXP(50);
-    expect(result).toBe(50);
-
-    const result2 = await Storage.addXP(30);
-    expect(result2).toBe(80);
+    expect(await Storage.addXP(50)).toBe(50);
+    expect(await Storage.addXP(30)).toBe(80);
   });
 
   test('addXP accumulates correctly', async () => {
     await Storage.addXP(10);
     await Storage.addXP(20);
     await Storage.addXP(30);
-    const total = await Storage.getXP();
-    expect(total).toBe(60);
-  });
-});
-
-// ─── Coins Functions ─────────────────────────────────
-
-describe('Coins functions', () => {
-  test('getCoins returns 0 when no coins stored', async () => {
-    const coins = await Storage.getCoins();
-    expect(coins).toBe(0);
+    expect(await Storage.getXP()).toBe(60);
   });
 
-  test('addCoins adds to current coins', async () => {
-    const result = await Storage.addCoins(100);
-    expect(result).toBe(100);
-
-    const result2 = await Storage.addCoins(50);
-    expect(result2).toBe(150);
-  });
-});
-
-// ─── Completed Missions ──────────────────────────────
-
-describe('Mission completion', () => {
-  test('getCompletedMissions returns empty array by default', async () => {
-    const missions = await Storage.getCompletedMissions();
-    expect(missions).toEqual([]);
-  });
-
-  test('completeMission adds mission ID to list', async () => {
-    await Storage.completeMission('mission-1');
-    const missions = await Storage.getCompletedMissions();
-    expect(missions).toContain('mission-1');
-  });
-
-  test('completeMission does not add duplicates', async () => {
-    await Storage.completeMission('mission-1');
-    await Storage.completeMission('mission-1');
-    const missions = await Storage.getCompletedMissions();
-    expect(missions.filter((m) => m === 'mission-1')).toHaveLength(1);
-  });
-
-  test('multiple missions can be completed', async () => {
-    await Storage.completeMission('mission-1');
-    await Storage.completeMission('mission-2');
-    await Storage.completeMission('mission-3');
-    const missions = await Storage.getCompletedMissions();
-    expect(missions).toHaveLength(3);
-    expect(missions).toContain('mission-1');
-    expect(missions).toContain('mission-2');
-    expect(missions).toContain('mission-3');
-  });
-});
-
-// ─── Alphabet Progress ───────────────────────────────
-
-describe('Alphabet progress', () => {
-  test('getAlphabetProgress returns empty array by default', async () => {
-    const progress = await Storage.getAlphabetProgress();
-    expect(progress).toEqual([]);
-  });
-
-  test('markLetterLearned adds letter ID', async () => {
-    await Storage.markLetterLearned(1);
-    const progress = await Storage.getAlphabetProgress();
-    expect(progress).toContain(1);
-  });
-
-  test('markLetterLearned does not add duplicates', async () => {
-    await Storage.markLetterLearned(5);
-    await Storage.markLetterLearned(5);
-    const progress = await Storage.getAlphabetProgress();
-    expect(progress.filter((id) => id === 5)).toHaveLength(1);
-  });
-});
-
-// ─── Daily Challenge ─────────────────────────────────
-
-describe('Daily challenge', () => {
-  test('getDailyChallengeRecord returns defaults', async () => {
-    const record = await Storage.getDailyChallengeRecord();
-    expect(record.totalCompleted).toBe(0);
-    expect(record.lastCompletedDate).toBe('');
-  });
-
-  test('completeDailyChallenge updates record', async () => {
-    await Storage.completeDailyChallenge();
-    const record = await Storage.getDailyChallengeRecord();
-    expect(record.totalCompleted).toBe(1);
-    expect(record.lastCompletedDate).toBe(new Date().toISOString().split('T')[0]);
-  });
-});
-
-// ─── Listening Stats ─────────────────────────────────
-
-describe('Listening stats', () => {
-  test('getListeningStats returns defaults', async () => {
-    const stats = await Storage.getListeningStats();
-    expect(stats.totalMinutes).toBe(0);
-    expect(stats.weeklyMinutes).toEqual([0, 0, 0, 0, 0, 0, 0]);
-  });
-
-  test('addListeningMinutes increases total', async () => {
-    await Storage.addListeningMinutes(15);
-    const stats = await Storage.getListeningStats();
-    expect(stats.totalMinutes).toBe(15);
-  });
-
-  test('addListeningMinutes accumulates', async () => {
-    await Storage.addListeningMinutes(10);
-    await Storage.addListeningMinutes(20);
-    const stats = await Storage.getListeningStats();
-    expect(stats.totalMinutes).toBe(30);
+  test('addXP also tracks daily XP for today', async () => {
+    await Storage.addXP(25);
+    const daily = await Storage.getDailyXP();
+    expect(daily.xp).toBe(25);
+    expect(daily.date).toBe(new Date().toISOString().split('T')[0]);
   });
 });
 
@@ -272,26 +163,24 @@ describe('Onboarding', () => {
 // ─── Daily Goal ──────────────────────────────────────
 
 describe('Daily goal', () => {
-  test('getDailyGoal returns 50 by default', async () => {
-    const goal = await Storage.getDailyGoal();
-    expect(goal).toBe(50);
+  test('getDailyGoal returns 12 cards by default', async () => {
+    expect(await Storage.getDailyGoal()).toBe(12);
   });
 
   test('setDailyGoal updates the goal', async () => {
-    await Storage.setDailyGoal(100);
-    const goal = await Storage.getDailyGoal();
-    expect(goal).toBe(100);
+    await Storage.setDailyGoal(20);
+    expect(await Storage.getDailyGoal()).toBe(20);
   });
 });
 
 // ─── Streak ──────────────────────────────────────────
 
 describe('Streak', () => {
-  test('getStreak returns default values', async () => {
+  test('getStreak returns default values (1 starter freeze)', async () => {
     const streak = await Storage.getStreak();
     expect(streak.currentStreak).toBe(0);
     expect(streak.longestStreak).toBe(0);
-    expect(streak.freezesAvailable).toBe(0);
+    expect(streak.freezesAvailable).toBe(1);
     expect(streak.totalDaysActive).toBe(0);
   });
 
@@ -302,17 +191,43 @@ describe('Streak', () => {
     expect(streak.lastActiveDate).toBe(new Date().toISOString().split('T')[0]);
   });
 
-  test('recordActivity on same day returns same streak', async () => {
+  test('recordActivity on same day is idempotent', async () => {
     const first = await Storage.recordActivity();
     const second = await Storage.recordActivity();
     expect(second.currentStreak).toBe(first.currentStreak);
     expect(second.totalDaysActive).toBe(first.totalDaysActive);
   });
+});
 
-  test('addStreakFreeze increases freeze count', async () => {
-    const before = await Storage.getStreak();
-    await Storage.addStreakFreeze();
-    const after = await Storage.getStreak();
-    expect(after.freezesAvailable).toBe(before.freezesAvailable + 1);
+// ─── Weekly Activity ─────────────────────────────────
+
+describe('Weekly activity', () => {
+  test('getWeeklyActivity returns empty object by default', async () => {
+    expect(await Storage.getWeeklyActivity()).toEqual({});
+  });
+
+  test('recordActivity populates today in weekly activity', async () => {
+    await Storage.recordActivity();
+    const activity = await Storage.getWeeklyActivity();
+    const today = new Date().toISOString().split('T')[0];
+    expect(activity[today]).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ─── Reset ───────────────────────────────────────────
+
+describe('resetAllData', () => {
+  test('clears XP, streak, goal, onboarded', async () => {
+    await Storage.addXP(100);
+    await Storage.recordActivity();
+    await Storage.setDailyGoal(20);
+    await Storage.setOnboarded();
+
+    await Storage.resetAllData();
+
+    expect(await Storage.getXP()).toBe(0);
+    expect((await Storage.getStreak()).currentStreak).toBe(0);
+    expect(await Storage.getDailyGoal()).toBe(12);
+    expect(await Storage.hasOnboarded()).toBe(false);
   });
 });

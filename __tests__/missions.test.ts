@@ -2,7 +2,7 @@
  * Tests for Mission curriculum data
  * Validates structure, quiz questions, phrases, and level configuration
  */
-import { missions, LEVELS, type Mission, type QuizQuestion } from '@/data/missions';
+import { missions, LEVELS, type Mission } from '@/data/missions';
 
 describe('Missions Data', () => {
   test('has 5 missions for Level 1', () => {
