@@ -1,0 +1,4 @@
+# Maestro workspace config for the Hala E2E suite.
+# Flows run in alphabetical order (01 -> 02 -> 03).
+flows:
+  - "0*.yaml"

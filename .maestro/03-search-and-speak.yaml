@@ -1,0 +1,24 @@
+# Core flow: search filters the list, tapping a phrase plays audio (no crash).
+appId: com.hala.emirati.arabic
+---
+- launchApp:
+    clearState: true
+
+# Get past onboarding onto the Beginner browser.
+- assertVisible: "Learn Emirati Arabic"
+- tapOn: "Start learning"
+- assertVisible: "Peace be upon you"
+
+# Search narrows the list.
+- tapOn: "Search English, transliteration, or Arabic"
+- inputText: "morning"
+- assertVisible: "Good morning"
+- assertNotVisible: "Peace be upon you"
+
+# Tap a result to trigger TTS; the row must stay on screen (no crash).
+- tapOn: "Good morning"
+- assertVisible: "Good morning"
+
+# Clearing the query restores the full list.
+- eraseText: 7
+- assertVisible: "Peace be upon you"

@@ -43,6 +43,7 @@ constants/aiConfig.ts
 # Sensitive config
 google-services.json
 revenuecat-key.json
+google-play-key.json
 
 # Python cache
 __pycache__/

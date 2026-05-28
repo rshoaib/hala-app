@@ -1,0 +1,24 @@
+# Core flow: switching levels swaps the phrase pool.
+appId: com.hala.emirati.arabic
+---
+- launchApp:
+    clearState: true
+
+# Get past onboarding (default level = Beginner).
+- assertVisible: "Learn Emirati Arabic"
+- tapOn: "Start learning"
+- assertVisible: "Peace be upon you"   # Beginner content
+
+# Beginner -> Intermediate (Family theme leads with "Father")
+- tapOn: "Intermediate"
+- assertVisible: "Father"
+- assertNotVisible: "Peace be upon you"
+
+# Intermediate -> Expert (Idioms theme leads with "God willing")
+- tapOn: "Expert"
+- assertVisible: "God willing"
+- assertNotVisible: "Father"
+
+# Back to Beginner
+- tapOn: "Beginner"
+- assertVisible: "Peace be upon you"

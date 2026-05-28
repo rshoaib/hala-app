@@ -1,0 +1,19 @@
+# Core flow: first launch -> onboarding -> phrase browser home.
+appId: com.hala.emirati.arabic
+---
+- launchApp:
+    clearState: true
+
+# Onboarding is shown on a fresh install.
+- assertVisible: "Learn Emirati Arabic"
+- assertVisible: "Beginner"
+- assertVisible: "Intermediate"
+- assertVisible: "Expert"
+
+# Pick a level and start.
+- tapOn: "Beginner"
+- tapOn: "Start learning"
+
+# We land on the phrase browser (home). "Peace be upon you" is the first
+# Beginner phrase and only exists on the browser, not on onboarding.
+- assertVisible: "Peace be upon you"
