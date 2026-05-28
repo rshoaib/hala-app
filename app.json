@@ -50,7 +50,8 @@
           "icon": "./assets/images/icon.png",
           "color": "#D4A328"
         }
-      ]
+      ],
+      "./plugins/withLocalArm64.js"
     ],
     "experiments": {
       "typedRoutes": true
