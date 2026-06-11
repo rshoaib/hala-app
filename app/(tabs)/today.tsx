@@ -132,6 +132,8 @@ export default function Home() {
             <Pressable
               key={l.id}
               onPress={() => handleLevelChange(l.id)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
               style={[styles.pill, active && styles.pillActive]}
             >
               <Text style={[styles.pillText, active && styles.pillTextActive]}>
@@ -153,7 +155,8 @@ export default function Home() {
           value={query}
           onChangeText={setQuery}
           placeholder="Search English, transliteration, or Arabic"
-          placeholderTextColor={Colors.textMuted}
+          placeholderTextColor={Colors.textSecondary}
+          accessibilityLabel="Search phrases"
           style={styles.searchInput}
           autoCorrect={false}
           autoCapitalize="none"
@@ -162,7 +165,9 @@ export default function Home() {
         {query.length > 0 && (
           <Pressable
             onPress={() => setQuery('')}
-            hitSlop={8}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
             style={styles.clearBtn}
           >
             <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
@@ -200,6 +205,8 @@ export default function Home() {
                   <Pressable
                     key={p.id}
                     onPress={() => handleSpeak(p)}
+                    accessibilityRole="button"
+                    accessibilityHint="Plays the Arabic pronunciation"
                     style={({ pressed }) => [
                       styles.phraseRow,
                       pressed && styles.phraseRowPressed,
@@ -268,7 +275,7 @@ const styles = StyleSheet.create({
   },
   pill: {
     flex: 1,
-    height: 40,
+    height: 44,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.surface,
     alignItems: 'center',
@@ -285,7 +292,7 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontFamily: FontFamily.bold,
     fontWeight: FontWeight.bold,
-    color: Colors.textSecondary,
+    color: Colors.text,
   },
   pillTextActive: { color: Colors.textOnPrimary },
   searchRow: {
@@ -313,7 +320,7 @@ const styles = StyleSheet.create({
   count: {
     fontSize: FontSize.xs,
     fontFamily: FontFamily.semibold,
-    color: Colors.textMuted,
+    color: Colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: Spacing.sm,
@@ -361,7 +368,7 @@ const styles = StyleSheet.create({
   english: {
     fontSize: FontSize.sm,
     fontFamily: FontFamily.regular,
-    color: Colors.textMuted,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   speakBtn: {

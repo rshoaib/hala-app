@@ -1,6 +1,8 @@
 import { Stack, Link } from 'expo-router';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Spacing, FontSize, BorderRadius } from '@/constants/theme';
+import {
+  Colors, Spacing, FontSize, FontWeight, FontFamily, BorderRadius,
+} from '@/constants/theme';
 
 export default function NotFoundScreen() {
   return (
@@ -10,7 +12,7 @@ export default function NotFoundScreen() {
         <Text style={styles.emoji}>🤷</Text>
         <Text style={styles.title}>This screen doesn't exist.</Text>
         <Link href="/today" asChild>
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity accessibilityRole="button" style={styles.button}>
             <Text style={styles.buttonText}>Go to home screen</Text>
           </TouchableOpacity>
         </Link>
@@ -34,7 +36,8 @@ const styles = StyleSheet.create({
   title: {
     color: Colors.text,
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeight.bold,
   },
   button: {
     backgroundColor: Colors.primary,
@@ -46,6 +49,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: Colors.textOnPrimary,
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeight.bold,
   },
 });

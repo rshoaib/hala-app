@@ -15,8 +15,9 @@ import {
   Animated,
   Dimensions,
   Image,
+  Pressable,
 } from 'react-native';
-import { Colors, FontSize } from '@/constants/theme';
+import { Colors, FontSize, FontWeight, FontFamily } from '@/constants/theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -47,6 +48,7 @@ interface AnimatedSplashProps {
 
 export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
   const [greetingIndex, setGreetingIndex] = useState(0);
+  const finished = useRef(false);
 
   // Animation values
   const logoScale = useRef(new Animated.Value(0.3)).current;
@@ -184,15 +186,20 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
     }).start();
 
     // Phase 6: Fade out everything (3200ms)
-    setTimeout(() => {
-      Animated.timing(overallOpacity, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }).start(() => {
-        onFinish();
-      });
-    }, 3200);
+    setTimeout(() => finish(500), 3200);
+  }
+
+  // Single exit path — used by the timed fade-out and by tap-to-skip.
+  function finish(duration: number) {
+    if (finished.current) return;
+    finished.current = true;
+    Animated.timing(overallOpacity, {
+      toValue: 0,
+      duration,
+      useNativeDriver: true,
+    }).start(() => {
+      onFinish();
+    });
   }
 
   function showGreeting(index: number) {
@@ -229,8 +236,18 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
   }
 
   return (
-    <Animated.View style={[styles.container, { opacity: overallOpacity }]}>
-      <View style={[styles.gradient, { backgroundColor: '#F5F0E8' }]}>
+    // Decorative interstitial: hidden from screen readers so TalkBack users
+    // aren't trapped on it; any tap skips straight into the app.
+    <Animated.View
+      style={[styles.container, { opacity: overallOpacity }]}
+      importantForAccessibility="no-hide-descendants"
+      accessibilityElementsHidden
+    >
+      <Pressable
+        style={[styles.gradient, { backgroundColor: '#FBF7F0' }]}
+        onPress={() => finish(250)}
+        accessible={false}
+      >
         {/* Floating Arabic letters background */}
         {FLOATING_LETTERS.map((letter, i) => (
           <Animated.Text
@@ -341,7 +358,7 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
             ]}
           />
         </View>
-      </View>
+      </Pressable>
     </Animated.View>
   );
 }
@@ -396,12 +413,14 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: FontSize.xxxl,
-    fontWeight: '800',
+    fontFamily: FontFamily.extraBold,
+    fontWeight: FontWeight.extraBold,
     color: Colors.text,
     letterSpacing: 2,
   },
   tagline: {
     fontSize: FontSize.md,
+    fontFamily: FontFamily.regular,
     color: Colors.textSecondary,
     marginTop: 4,
     letterSpacing: 1,
@@ -414,10 +433,12 @@ const styles = StyleSheet.create({
   greetingAr: {
     fontSize: FontSize.arabicLarge,
     color: Colors.primary,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeight.bold,
   },
   greetingSub: {
     fontSize: FontSize.sm,
+    fontFamily: FontFamily.regular,
     color: Colors.textSecondary,
     marginTop: 4,
   },

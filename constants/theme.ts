@@ -20,7 +20,7 @@ export const Colors = {
   // ── Primary — Arabic Gold ──
   primary: '#D4A328',             // vivid gold (brighter, more saturated)
   primaryLight: '#F0C95C',
-  primaryDark: '#B8891E',
+  primaryDark: '#8A6716',         // deep gold — AA-safe for small text/icons on light bg
   primaryMuted: 'rgba(212, 163, 40, 0.12)',
   primarySoft: 'rgba(212, 163, 40, 0.06)',
 
@@ -44,9 +44,9 @@ export const Colors = {
 
   // ── Text — Cool Neutral Tones ──
   text: '#1E2340',                // cool near-black
-  textSecondary: '#6B7194',       // cool gray
-  textMuted: '#A0A6C4',           // cool muted
-  textOnPrimary: '#FFFFFF',
+  textSecondary: '#646A8C',       // cool gray — 4.5:1+ on background and card
+  textMuted: '#8A90B0',           // cool muted — 3:1+ for icons/decorative only
+  textOnPrimary: '#1E2340',       // dark text on gold — white fails contrast (2.3:1)
   textOnDark: '#F0F1F8',
 
   // ── Status ──

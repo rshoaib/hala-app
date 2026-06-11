@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Colors, FontSize, FontWeight, FontFamily, Spacing,
-  BorderRadius, Shadows,
+  BorderRadius, Shadows, ComponentTokens,
 } from '@/constants/theme';
 import { LEVELS, type Level } from '@/data/phrases';
 import * as Storage from '@/services/storageService';
@@ -51,7 +51,10 @@ export default function Onboarding() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>Hala — مرحبا</Text>
+          {/* Arabic must not inherit letterSpacing — it breaks cursive joining */}
+          <Text style={styles.eyebrow}>
+            Hala <Text style={styles.eyebrowArabic}>— مرحبا</Text>
+          </Text>
           <Text style={styles.title}>Learn Emirati Arabic</Text>
           <Text style={styles.subtitle}>
             Pick a level to get started. You can switch any time.
@@ -65,16 +68,15 @@ export default function Onboarding() {
               <Pressable
                 key={lvl.id}
                 onPress={() => setPicked(lvl.id)}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: selected }}
                 style={[
                   styles.option,
                   selected && styles.optionSelected,
                 ]}
               >
                 <View style={styles.optionHead}>
-                  <Text style={[
-                    styles.optionTitle,
-                    selected && styles.optionTitleSelected,
-                  ]}>
+                  <Text style={styles.optionTitle}>
                     {lvl.title}
                   </Text>
                   <View style={[
@@ -124,6 +126,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginBottom: Spacing.sm,
   },
+  eyebrowArabic: {
+    letterSpacing: 0,
+  },
   title: {
     fontSize: FontSize.hero,
     fontFamily: FontFamily.black,
@@ -167,9 +172,6 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: Colors.text,
   },
-  optionTitleSelected: {
-    color: Colors.primaryDark,
-  },
   optionDesc: {
     fontSize: FontSize.sm,
     fontFamily: FontFamily.regular,
@@ -186,16 +188,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   radioSelected: {
-    borderColor: Colors.primary,
+    borderColor: Colors.primaryDark,
     backgroundColor: Colors.card,
   },
   radioDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.primaryDark,
   },
   cta: {
     paddingTop: Spacing.md,
+    // Fixed height so swapping the button for a spinner doesn't shift layout.
+    height: ComponentTokens.button.height + Spacing.md,
+    justifyContent: 'center',
   },
 });

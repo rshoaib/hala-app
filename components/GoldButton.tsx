@@ -43,6 +43,7 @@ export default function GoldButton({
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
+    if (disabled) return;
     Animated.spring(scale, {
       toValue: 0.96,
       useNativeDriver: true,
@@ -52,6 +53,7 @@ export default function GoldButton({
   };
 
   const handlePressOut = () => {
+    if (disabled) return;
     Animated.spring(scale, {
       toValue: 1,
       useNativeDriver: true,
@@ -60,7 +62,7 @@ export default function GoldButton({
     }).start();
   };
 
-  const heightMap = { sm: ComponentTokens.buttonSm.height, md: ComponentTokens.button.height, lg: 56 };
+  const heightMap = { sm: ComponentTokens.buttonSm.height, md: ComponentTokens.button.height, lg: 64 };
   const fontMap = { sm: FontSize.sm, md: FontSize.md, lg: FontSize.lg };
   const iconSize = { sm: 16, md: 18, lg: 20 };
 
@@ -73,14 +75,17 @@ export default function GoldButton({
       ? styles.accent
       : styles.default;
 
-  const iconColor = isOutline ? Colors.primary : Colors.textOnPrimary;
-  const textColor = isOutline ? Colors.primary : Colors.textOnPrimary;
+  const iconColor = isOutline ? Colors.primaryDark : Colors.textOnPrimary;
+  const textColor = isOutline ? Colors.primaryDark : Colors.textOnPrimary;
 
   return (
     <TouchableWithoutFeedback
       onPress={disabled ? undefined : onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled }}
     >
       <Animated.View
         style={[
