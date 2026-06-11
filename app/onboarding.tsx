@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Colors, FontSize, FontWeight, FontFamily, Spacing,
-  BorderRadius, Shadows, ComponentTokens,
+  BorderRadius, Shadows, ComponentTokens, TextStyles,
 } from '@/constants/theme';
 import { LEVELS, type Level } from '@/data/phrases';
 import * as Storage from '@/services/storageService';
@@ -119,11 +119,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   eyebrow: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.semibold,
-    color: Colors.primaryDark,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
+    ...TextStyles.eyebrow,
     marginBottom: Spacing.sm,
   },
   eyebrowArabic: {
@@ -181,7 +177,7 @@ const styles = StyleSheet.create({
   radio: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     borderWidth: 2,
     borderColor: Colors.border,
     alignItems: 'center',
@@ -194,7 +190,7 @@ const styles = StyleSheet.create({
   radioDot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
+    borderRadius: BorderRadius.full,
     backgroundColor: Colors.primaryDark,
   },
   cta: {

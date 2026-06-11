@@ -17,7 +17,9 @@ import {
   Image,
   Pressable,
 } from 'react-native';
-import { Colors, FontSize, FontWeight, FontFamily } from '@/constants/theme';
+import {
+  Colors, FontSize, FontWeight, FontFamily, BorderRadius,
+} from '@/constants/theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -244,7 +246,7 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
       accessibilityElementsHidden
     >
       <Pressable
-        style={[styles.gradient, { backgroundColor: '#FBF7F0' }]}
+        style={styles.gradient}
         onPress={() => finish(250)}
         accessible={false}
       >
@@ -372,25 +374,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: Colors.splashBackground,
   },
   floatingLetter: {
     position: 'absolute',
     color: Colors.primary,
-    fontWeight: '300',
+    fontWeight: FontWeight.regular,
   },
   glow: {
     position: 'absolute',
     width: 200,
     height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(218, 165, 32, 0.15)',
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.goldGlow,
   },
   logoContainer: {
     width: 140,
     height: 140,
-    borderRadius: 32,
+    borderRadius: BorderRadius.round,
     overflow: 'hidden',
-    shadowColor: '#B8860B',
+    shadowColor: Colors.primaryDark,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 24,
@@ -404,7 +407,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 60,
     height: height,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: Colors.shimmer,
     transform: [{ skewX: '-20deg' }],
   },
   taglineContainer: {
@@ -447,13 +450,13 @@ const styles = StyleSheet.create({
     bottom: 80,
     width: width * 0.5,
     height: 3,
-    backgroundColor: 'rgba(184, 134, 11, 0.15)',
-    borderRadius: 2,
+    backgroundColor: Colors.goldGlowDeep,
+    borderRadius: BorderRadius.full,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
     backgroundColor: Colors.primary,
-    borderRadius: 2,
+    borderRadius: BorderRadius.full,
   },
 });

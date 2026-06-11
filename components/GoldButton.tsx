@@ -21,7 +21,7 @@ interface GoldButtonProps {
   title: string;
   onPress: () => void;
   icon?: IoniconsName;
-  variant?: 'primary' | 'secondary' | 'outline' | 'accent';
+  variant?: 'primary' | 'outline' | 'accent';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   style?: ViewStyle;
@@ -160,6 +160,6 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   disabled: {
-    backgroundColor: '#B0A594',
+    backgroundColor: Colors.disabled,
   },
 });

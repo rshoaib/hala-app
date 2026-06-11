@@ -23,7 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import {
   Colors, FontSize, FontWeight, FontFamily, Spacing,
-  BorderRadius, Shadows,
+  BorderRadius, Shadows, TextStyles, ComponentTokens,
 } from '@/constants/theme';
 import {
   LEVELS,
@@ -253,12 +253,8 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.sm,
   },
   eyebrow: {
-    fontSize: FontSize.xs,
-    fontFamily: FontFamily.semibold,
-    color: Colors.primaryDark,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    marginBottom: 2,
+    ...TextStyles.eyebrow,
+    marginBottom: Spacing['2xs'],
   },
   title: {
     fontSize: FontSize.xxl,
@@ -275,7 +271,7 @@ const styles = StyleSheet.create({
   },
   pill: {
     flex: 1,
-    height: 44,
+    height: ComponentTokens.pill.height,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.surface,
     alignItems: 'center',
@@ -301,8 +297,8 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.md,
     paddingHorizontal: Spacing.md,
-    height: 48,
-    borderRadius: BorderRadius.lg,
+    height: ComponentTokens.input.height,
+    borderRadius: ComponentTokens.input.borderRadius,
     backgroundColor: Colors.card,
     borderWidth: 1,
     borderColor: Colors.borderLight,
@@ -318,11 +314,7 @@ const styles = StyleSheet.create({
   clearBtn: { padding: Spacing.xs },
   list: { paddingHorizontal: Spacing.lg },
   count: {
-    fontSize: FontSize.xs,
-    fontFamily: FontFamily.semibold,
-    color: Colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    ...TextStyles.label,
     marginBottom: Spacing.sm,
   },
   themeBlock: { marginBottom: Spacing.lg },
@@ -374,7 +366,7 @@ const styles = StyleSheet.create({
   speakBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: BorderRadius.full,
     backgroundColor: Colors.primaryMuted,
     alignItems: 'center',
     justifyContent: 'center',
