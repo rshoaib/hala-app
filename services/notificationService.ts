@@ -9,12 +9,14 @@
  *
  * Local notifications work in Expo Go on SDK 53+. No Firebase required.
  */
+import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { phrasesForLevel, type Level } from '@/data/phrases';
 import { getLevel } from './storageService';
 
 const DAILY_HOUR = 19;
 const DAILY_MINUTE = 0;
+const CHANNEL_ID = 'daily-phrase';
 
 // In-foreground behaviour: show a banner.
 Notifications.setNotificationHandler({
@@ -26,6 +28,18 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
+
+/**
+ * Android 8+ groups notifications into user-manageable channels. Without a
+ * named channel ours would appear as "Miscellaneous" in system settings.
+ */
+async function ensureAndroidChannel(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
+    name: 'Daily phrase reminder',
+    importance: Notifications.AndroidImportance.DEFAULT,
+  });
+}
 
 async function ensurePermission(): Promise<boolean> {
   try {
@@ -54,6 +68,7 @@ export async function scheduleDailyPhrase(): Promise<void> {
     const granted = await ensurePermission();
     if (!granted) return;
 
+    await ensureAndroidChannel();
     await Notifications.cancelAllScheduledNotificationsAsync();
 
     const level = await getLevel();
@@ -66,10 +81,11 @@ export async function scheduleDailyPhrase(): Promise<void> {
         body: `${phrase.arabic}  •  ${phrase.english}`,
       },
       trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
         hour: DAILY_HOUR,
         minute: DAILY_MINUTE,
-        repeats: true,
-      } as Notifications.NotificationTriggerInput,
+        channelId: CHANNEL_ID,
+      },
     });
   } catch {
     // Notifications are non-critical — never throw out of this function.

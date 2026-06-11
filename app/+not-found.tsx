@@ -7,13 +7,13 @@ import {
 export default function NotFoundScreen() {
   return (
     <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
+      <Stack.Screen options={{ title: 'Not found' }} />
       <View style={styles.container}>
         <Text style={styles.emoji}>🤷</Text>
         <Text style={styles.title}>This screen doesn't exist.</Text>
         <Link href="/today" asChild>
           <TouchableOpacity accessibilityRole="button" style={styles.button}>
-            <Text style={styles.buttonText}>Go to home screen</Text>
+            <Text style={styles.buttonText}>Go home</Text>
           </TouchableOpacity>
         </Link>
       </View>

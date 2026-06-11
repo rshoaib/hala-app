@@ -185,9 +185,9 @@ export default function Home() {
       >
         {filteredThemes.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No matches</Text>
+            <Text style={styles.emptyTitle}>No matching phrases</Text>
             <Text style={styles.emptyBody}>
-              Try a different search or switch level.
+              Try a different search or switch levels.
             </Text>
           </View>
         ) : (
