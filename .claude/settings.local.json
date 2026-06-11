@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "mcp__Claude_Preview__preview_start",
-      "WebFetch(domain:expo.dev)"
+      "WebFetch(domain:expo.dev)",
+      "PowerShell(npm run typecheck 2>&1)",
+      "PowerShell(npm run typecheck 2>&1 | Select-Object -Last 40; \"EXITCODE: $LASTEXITCODE\")",
+      "PowerShell(Write-Output \"=== app already installed? ===\"; $pkgs = adb shell pm list packages 2>&1; \\($pkgs | Select-String \"com.hala.emirati.arabic\"\\); if \\(-not \\($pkgs | Select-String \"com.hala.emirati.arabic\"\\)\\) { \"NOT installed on device\" }; Write-Output \"=== existing maestro dir? ===\"; if \\(Test-Path \"$env:USERPROFILE\\\\.maestro\"\\) { \"~/.maestro EXISTS\"; Get-ChildItem \"$env:USERPROFILE\\\\.maestro\\\\bin\" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name } else { \"~/.maestro MISSING\" }; Write-Output \"=== device model ===\"; adb shell getprop ro.product.model; adb shell getprop ro.build.version.release)"
     ]
   }
 }
