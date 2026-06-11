@@ -64,3 +64,5 @@ coverage/
 
 # Temp files
 *.tmp
+eas-submit-key-deprecated.json
+
