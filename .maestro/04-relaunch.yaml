@@ -1,0 +1,19 @@
+# Regression: a SECOND cold launch with persisted state (the everyday user
+# path) must land on the phrase browser — not "+not-found". Catches the
+# missing-index-route bug where "/" resolved to nothing and the not-found
+# screen covered the app for every onboarded user.
+appId: com.hala.emirati.arabic
+---
+- launchApp:
+    clearState: true
+
+# First run: get through onboarding.
+- assertVisible: "Learn Emirati Arabic"
+- tapOn: "Start learning"
+- assertVisible: "Peace be upon you"
+
+# Relaunch WITHOUT clearing state — must come back to the browser.
+- launchApp:
+    stopApp: true
+- assertVisible: "Peace be upon you"
+- assertNotVisible: "This screen doesn't exist."
