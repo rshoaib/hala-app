@@ -179,8 +179,8 @@ export default function Practice() {
         <Text style={styles.emptyTitle}>All caught up</Text>
         <Text style={styles.emptyBody}>
           {when
-            ? `Every phrase is scheduled for later. Your next review is ${when}.`
-            : 'Every phrase is scheduled for later.'}
+            ? `Nothing to review right now. Your next review is ${when}.`
+            : 'Nothing to review right now.'}
         </Text>
         <View style={styles.emptyCta}>
           <GoldButton title="Done" onPress={handleClose} />
