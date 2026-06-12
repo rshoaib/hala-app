@@ -326,25 +326,28 @@ export default function Practice() {
           );
         })}
 
+        {/* Feedback sits right under the options — close to where the eye
+            is — while the button stays pinned in the thumb zone. */}
+        <Text
+          accessibilityLiveRegion="polite"
+          style={[
+            styles.feedback,
+            isCorrectPick ? styles.feedbackCorrect : styles.feedbackWrong,
+          ]}
+        >
+          {picked === null
+            ? ' '
+            : isCorrectPick
+              ? 'Correct!'
+              : `Not quite — it means “${phrase.english}”`}
+        </Text>
+
         <View style={styles.footer}>
           {picked !== null && (
-            <>
-              <Text
-                accessibilityLiveRegion="polite"
-                style={[
-                  styles.feedback,
-                  isCorrectPick ? styles.feedbackCorrect : styles.feedbackWrong,
-                ]}
-              >
-                {isCorrectPick
-                  ? 'Correct!'
-                  : `Not quite — it means “${phrase.english}”`}
-              </Text>
-              <GoldButton
-                title={isLast ? 'Finish' : 'Next'}
-                onPress={handleNext}
-              />
-            </>
+            <GoldButton
+              title={isLast ? 'Finish' : 'Next'}
+              onPress={handleNext}
+            />
           )}
         </View>
       </ScrollView>
@@ -470,8 +473,8 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: 'auto',
     paddingTop: Spacing.md,
-    // Reserve space for feedback + button so options don't jump on answer.
-    minHeight: ComponentTokens.button.height + Spacing.xl + Spacing.lg,
+    // Reserve the button's space so options don't jump on answer.
+    minHeight: ComponentTokens.button.height + Spacing.md,
     justifyContent: 'flex-end',
   },
   feedback: {
@@ -479,10 +482,14 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bold,
     fontWeight: FontWeight.bold,
     textAlign: 'center',
-    marginBottom: Spacing.md,
+    marginTop: Spacing.xs,
+    // Reserve one line so the reveal doesn't shift the layout.
+    minHeight: FontSize.md + Spacing.sm,
   },
   feedbackCorrect: { color: Colors.primaryDark },
-  feedbackWrong: { color: Colors.accentDark },
+  // The terracotta option carries the error signal; the text stays in the
+  // AA-safe body color (accentDark on this background is only 3.8:1).
+  feedbackWrong: { color: Colors.text },
 
   // ── Empty ──
   emptyTitle: {
@@ -506,9 +513,15 @@ const styles = StyleSheet.create({
   summaryScroll: {
     flexGrow: 1,
     paddingHorizontal: Spacing.lg,
-    justifyContent: 'space-between',
   },
-  summaryBody: { alignItems: 'center', paddingTop: Spacing.xl },
+  // Center the stats between the top edge and the pinned Done button so
+  // tall screens don't leave a dead zone under the card.
+  summaryBody: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.xl,
+  },
   eyebrow: {
     ...TextStyles.eyebrow,
     marginBottom: Spacing.sm,
