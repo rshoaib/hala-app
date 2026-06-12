@@ -33,8 +33,10 @@ import {
   type PhraseTheme,
 } from '@/data/phrases';
 import * as Storage from '@/services/storageService';
+import * as SRS from '@/services/srsService';
 import { speakArabic } from '@/services/speechService';
 import { scheduleDailyPhrase } from '@/services/notificationService';
+import GoldButton from '@/components/GoldButton';
 
 export default function Home() {
   const router = useRouter();
@@ -42,6 +44,8 @@ export default function Home() {
   const [level, setLevelState] = useState<Level | null>(null);
   const [query, setQuery] = useState('');
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  // Size of the next practice session (null until first computed).
+  const [practiceReady, setPracticeReady] = useState<number | null>(null);
 
   // Gate onboarding + load saved level on mount.
   useEffect(() => {
@@ -65,6 +69,26 @@ export default function Home() {
       Storage.getLevel().then((lvl) => {
         if (!cancelled) setLevelState((prev) => prev ?? lvl);
       });
+      return () => { cancelled = true; };
+    }, [])
+  );
+
+  // Refresh the practice-card count on focus — answering a session
+  // reschedules phrases, so the count changes when the user comes back.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      (async () => {
+        const [lvl, srsState] = await Promise.all([
+          Storage.getLevel(),
+          Storage.getPracticeState(),
+        ]);
+        if (!cancelled) {
+          setPracticeReady(
+            SRS.buildSessionQueue(lvl, srsState, Date.now()).length
+          );
+        }
+      })();
       return () => { cancelled = true; };
     }, [])
   );
@@ -96,6 +120,9 @@ export default function Home() {
     await Storage.setLevel(next);
     // Reschedule the daily notification to use the new level's pool.
     scheduleDailyPhrase();
+    // The practice queue is per-level, so the card count changes too.
+    const srsState = await Storage.getPracticeState();
+    setPracticeReady(SRS.buildSessionQueue(next, srsState, Date.now()).length);
   }
 
   async function handleSpeak(phrase: Phrase) {
@@ -142,6 +169,30 @@ export default function Home() {
             </Pressable>
           );
         })}
+      </View>
+
+      <View style={styles.practiceCard}>
+        <View style={styles.practiceIcon}>
+          <Ionicons name="flash" size={20} color={Colors.primaryDark} />
+        </View>
+        <View style={styles.practiceInfo}>
+          <Text style={styles.practiceTitle}>Daily practice</Text>
+          <Text style={styles.practiceCaption}>
+            {practiceReady === null
+              ? ' '
+              : practiceReady > 0
+                ? `${practiceReady} phrase${practiceReady === 1 ? '' : 's'} ready`
+                : 'All caught up — back tomorrow'}
+          </Text>
+        </View>
+        {practiceReady !== null && practiceReady > 0 && (
+          <GoldButton
+            title="Start"
+            size="sm"
+            fullWidth={false}
+            onPress={() => router.push('/practice')}
+          />
+        )}
       </View>
 
       <View style={styles.searchRow}>
@@ -291,6 +342,40 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   pillTextActive: { color: Colors.textOnPrimary },
+  practiceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    padding: Spacing.md,
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    ...Shadows.card,
+  },
+  practiceIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.md,
+  },
+  practiceInfo: { flex: 1, marginRight: Spacing.sm },
+  practiceTitle: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeight.bold,
+    color: Colors.text,
+  },
+  practiceCaption: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.regular,
+    color: Colors.textSecondary,
+    marginTop: Spacing['2xs'],
+  },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
