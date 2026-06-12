@@ -6,10 +6,12 @@
  * INTERVAL_DAYS and a `due` timestamp. Correct answers advance the stage
  * (longer interval); wrong answers reset it to the shortest one.
  *
- * Everything here is deterministic: question order follows the curriculum
- * (data order) and distractor/option order derives from a hash of the
- * phrase id — no Math.random. Sessions are reproducible for a given
- * state, which the Maestro E2E suite relies on.
+ * Everything here is deterministic: due reviews come first (earliest due,
+ * then curriculum order), unseen phrases follow in curriculum order, and
+ * distractor/option order derives from a hash of the phrase id — no
+ * Math.random. Sessions are reproducible for a given state, which the
+ * Maestro E2E suite relies on (on a fresh install the queue is exactly
+ * the first SESSION_SIZE phrases of the level).
  */
 import { phrasesForLevel, type Level, type Phrase } from '@/data/phrases';
 
@@ -23,6 +25,9 @@ export interface PracticeRecord {
 /** phraseId → record. Only phrases that have been answered appear. */
 export type PracticeState = Record<string, PracticeRecord>;
 
+// Changing SESSION_SIZE (or the first SESSION_SIZE Beginner phrases in
+// data/phrases.ts) breaks the literal assertions in .maestro/05-practice.yaml
+// — update the flow in the same change.
 export const SESSION_SIZE = 8;
 export const OPTION_COUNT = 4;
 
@@ -33,6 +38,18 @@ export const INTERVAL_DAYS = [1, 3, 7, 14, 30] as const;
 const MEMORY_STAGE = 2;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Local midnight for the day containing `now`. Due dates snap to day
+ * boundaries so "due tomorrow" means tomorrow — a learner who practices
+ * at 9pm is due at midnight, not 9pm the next evening. Without this the
+ * 7pm daily notification leads users to an "all caught up" screen.
+ */
+function startOfLocalDay(now: number): number {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
 
 // ─── Deterministic ordering helpers ──────────────────────
 
@@ -133,10 +150,41 @@ export function gradeAnswer(
   correct: boolean,
   now: number
 ): PracticeRecord {
-  const stage = correct
-    ? Math.min((previous?.stage ?? -1) + 1, INTERVAL_DAYS.length - 1)
-    : 0;
-  return { stage, due: now + INTERVAL_DAYS[stage] * DAY_MS };
+  // Clamp the previous stage so an out-of-range record (corrupt storage)
+  // can't index past INTERVAL_DAYS and poison `due` with NaN.
+  const prevStage =
+    previous === undefined
+      ? -1
+      : Math.min(Math.max(previous.stage, 0), INTERVAL_DAYS.length - 1);
+  const stage = correct ? Math.min(prevStage + 1, INTERVAL_DAYS.length - 1) : 0;
+  return {
+    stage,
+    due: startOfLocalDay(now) + INTERVAL_DAYS[stage] * DAY_MS,
+  };
+}
+
+/**
+ * Earliest upcoming review for this level, or null if nothing is
+ * scheduled. Backs the "all caught up" copy so the UI can say when to
+ * come back instead of guessing "tomorrow".
+ */
+export function nextDueAt(level: Level, state: PracticeState): number | null {
+  let earliest: number | null = null;
+  for (const p of phrasesForLevel(level)) {
+    const record = state[p.id];
+    if (record !== undefined && (earliest === null || record.due < earliest)) {
+      earliest = record.due;
+    }
+  }
+  return earliest;
+}
+
+/** Whole days from `now`'s day to `due`'s day (0 = today, 1 = tomorrow). */
+export function daysUntil(due: number, now: number): number {
+  return Math.max(
+    0,
+    Math.round((startOfLocalDay(due) - startOfLocalDay(now)) / DAY_MS)
+  );
 }
 
 // ─── Counts (session summary) ────────────────────────────

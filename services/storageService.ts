@@ -6,10 +6,18 @@
  *   - the user's chosen level        (`@hala_level`)
  *   - the SRS practice schedule      (`@hala_practice_v1`)
  *   - practice session counters      (`@hala_practice_stats_v1`)
+ *
+ * Installs upgraded from v2 may still carry orphaned legacy keys
+ * (streak/XP/flashcard-schedule etc., cut in v3.0); `resetAllData`
+ * only clears the keys listed here.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Level } from '@/data/phrases';
-import type { PracticeRecord, PracticeState } from '@/services/srsService';
+import {
+  INTERVAL_DAYS,
+  type PracticeRecord,
+  type PracticeState,
+} from '@/services/srsService';
 
 const KEYS = {
   ONBOARDED: '@hala_onboarded',
@@ -17,6 +25,16 @@ const KEYS = {
   PRACTICE: '@hala_practice_v1',
   PRACTICE_STATS: '@hala_practice_stats_v1',
 } as const;
+
+/** Parse a stored JSON blob; null when missing, unreadable, or invalid. */
+async function readJson(key: string): Promise<unknown> {
+  try {
+    const raw = await AsyncStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as unknown) : null;
+  } catch {
+    return null;
+  }
+}
 
 const VALID_LEVELS: readonly Level[] = ['beginner', 'intermediate', 'expert'];
 
@@ -63,30 +81,30 @@ export async function setLevel(level: Level): Promise<void> {
 // ─── Practice (SRS) state ────────────────────────
 
 export async function getPracticeState(): Promise<PracticeState> {
-  try {
-    const raw = await AsyncStorage.getItem(KEYS.PRACTICE);
-    if (!raw) return {};
-    const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return {};
-    }
-    // Keep only well-formed records so a corrupt entry can't crash the app.
-    const state: PracticeState = {};
-    for (const [id, value] of Object.entries(parsed)) {
-      const record = value as Partial<PracticeRecord> | null;
-      if (
-        record !== null &&
-        typeof record === 'object' &&
-        typeof record.stage === 'number' &&
-        typeof record.due === 'number'
-      ) {
-        state[id] = { stage: record.stage, due: record.due };
-      }
-    }
-    return state;
-  } catch {
+  const parsed = await readJson(KEYS.PRACTICE);
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     return {};
   }
+  // Keep only well-formed records — stage must index INTERVAL_DAYS and
+  // due must be a real timestamp — so a corrupt entry can't poison the
+  // SRS math (e.g. INTERVAL_DAYS[-2] → due: NaN → phrase never due).
+  const state: PracticeState = {};
+  for (const [id, value] of Object.entries(parsed)) {
+    const record = value as Partial<PracticeRecord> | null;
+    if (
+      record !== null &&
+      typeof record === 'object' &&
+      typeof record.stage === 'number' &&
+      Number.isInteger(record.stage) &&
+      record.stage >= 0 &&
+      record.stage < INTERVAL_DAYS.length &&
+      typeof record.due === 'number' &&
+      Number.isFinite(record.due)
+    ) {
+      state[id] = { stage: record.stage, due: record.due };
+    }
+  }
+  return state;
 }
 
 export async function setPracticeState(state: PracticeState): Promise<void> {
@@ -105,24 +123,21 @@ export interface PracticeStats {
   completed: number;
 }
 
+const DEFAULT_STATS: PracticeStats = { started: 0, completed: 0 };
+
 export async function getPracticeStats(): Promise<PracticeStats> {
-  try {
-    const raw = await AsyncStorage.getItem(KEYS.PRACTICE_STATS);
-    if (!raw) return { started: 0, completed: 0 };
-    const parsed: unknown = JSON.parse(raw);
-    const stats = parsed as Partial<PracticeStats> | null;
-    if (
-      stats !== null &&
-      typeof stats === 'object' &&
-      typeof stats.started === 'number' &&
-      typeof stats.completed === 'number'
-    ) {
-      return { started: stats.started, completed: stats.completed };
-    }
-    return { started: 0, completed: 0 };
-  } catch {
-    return { started: 0, completed: 0 };
+  const parsed = await readJson(KEYS.PRACTICE_STATS);
+  const stats = parsed as Partial<PracticeStats> | null;
+  if (
+    stats !== null &&
+    typeof stats === 'object' &&
+    !Array.isArray(stats) &&
+    typeof stats.started === 'number' &&
+    typeof stats.completed === 'number'
+  ) {
+    return { started: stats.started, completed: stats.completed };
   }
+  return DEFAULT_STATS;
 }
 
 export async function setPracticeStats(stats: PracticeStats): Promise<void> {

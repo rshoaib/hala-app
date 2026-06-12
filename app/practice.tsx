@@ -41,27 +41,49 @@ export default function Practice() {
   const [picked, setPicked] = useState<number | null>(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [speaking, setSpeaking] = useState(false);
+  // Sessions-completed total, captured at finish for the summary screen.
+  const [completedTotal, setCompletedTotal] = useState(0);
+  // Days until the next review — backs the "all caught up" copy.
+  const [nextDueDays, setNextDueDays] = useState<number | null>(null);
 
   // Single-writer refs for persisted state; React state would lag behind
   // the async writes and risk dropping an answer on fast taps.
   const srsRef = useRef<SRS.PracticeState>({});
   const statsRef = useRef<Storage.PracticeStats>({ started: 0, completed: 0 });
+  // Tap-race guards. Two touches can land in the same frame (or the same
+  // JS task), before React re-renders — state alone can't block the
+  // second one. pickedRef blocks double-grading a question; advancingRef
+  // blocks double-advancing past it (it re-arms on the next pick, not at
+  // the end of handleNext, because both taps of a double-tap run
+  // sequentially in one task).
+  const pickedRef = useRef<number | null>(null);
+  const advancingRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [lvl, srsState, stats] = await Promise.all([
+      const [onboarded, lvl, srsState, stats] = await Promise.all([
+        Storage.hasOnboarded(),
         Storage.getLevel(),
         Storage.getPracticeState(),
         Storage.getPracticeStats(),
       ]);
       if (cancelled) return;
+      // Deep links (hala://practice) can reach this screen before
+      // onboarding — keep the same gate the home screen enforces.
+      if (!onboarded) {
+        router.replace('/onboarding');
+        return;
+      }
       srsRef.current = srsState;
       statsRef.current = stats;
-      const session = SRS.buildSessionQueue(lvl, srsState, Date.now());
+      const now = Date.now();
+      const session = SRS.buildSessionQueue(lvl, srsState, now);
       setLevel(lvl);
       setQueue(session);
       if (session.length === 0) {
+        const due = SRS.nextDueAt(lvl, srsState);
+        setNextDueDays(due === null ? null : SRS.daysUntil(due, now));
         setPhase('empty');
       } else {
         statsRef.current = { ...stats, started: stats.started + 1 };
@@ -70,7 +92,7 @@ export default function Practice() {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [router]);
 
   const phrase: Phrase | undefined = queue[index];
   const question = useMemo(
@@ -79,7 +101,9 @@ export default function Practice() {
   );
 
   function handlePick(optionIndex: number) {
-    if (picked !== null || !phrase || !question) return;
+    if (pickedRef.current !== null || !phrase || !question) return;
+    pickedRef.current = optionIndex;
+    advancingRef.current = false; // re-arm Next for this question
     const isCorrect = optionIndex === question.correctIndex;
     setPicked(optionIndex);
     if (isCorrect) setCorrectCount((c) => c + 1);
@@ -92,16 +116,30 @@ export default function Practice() {
   }
 
   function handleNext() {
+    if (advancingRef.current) return;
+    advancingRef.current = true;
     if (index + 1 >= queue.length) {
-      statsRef.current = {
+      const nextStats = {
         ...statsRef.current,
         completed: statsRef.current.completed + 1,
       };
-      Storage.setPracticeStats(statsRef.current);
+      statsRef.current = nextStats;
+      Storage.setPracticeStats(nextStats);
+      setCompletedTotal(nextStats.completed);
       setPhase('summary');
     } else {
       setIndex((i) => i + 1);
       setPicked(null);
+      pickedRef.current = null;
+    }
+  }
+
+  function handleClose() {
+    // Deep-linked entries may have no back stack — fall back to home.
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/today');
     }
   }
 
@@ -124,6 +162,12 @@ export default function Practice() {
   }
 
   if (phase === 'empty') {
+    const when =
+      nextDueDays === null
+        ? null
+        : nextDueDays <= 1
+          ? 'tomorrow'
+          : `in ${nextDueDays} days`;
     return (
       <View
         style={[
@@ -134,10 +178,12 @@ export default function Practice() {
       >
         <Text style={styles.emptyTitle}>All caught up</Text>
         <Text style={styles.emptyBody}>
-          Every phrase is scheduled for later. Come back tomorrow.
+          {when
+            ? `Every phrase is scheduled for later. Your next review is ${when}.`
+            : 'Every phrase is scheduled for later.'}
         </Text>
         <View style={styles.emptyCta}>
-          <GoldButton title="Done" onPress={() => router.back()} />
+          <GoldButton title="Done" onPress={handleClose} />
         </View>
       </View>
     );
@@ -182,10 +228,10 @@ export default function Practice() {
               </Text>
             </View>
             <Text style={styles.summarySessions}>
-              Sessions completed: {statsRef.current.completed}
+              Sessions completed: {completedTotal}
             </Text>
           </View>
-          <GoldButton title="Done" onPress={() => router.back()} />
+          <GoldButton title="Done" onPress={handleClose} />
         </ScrollView>
       </View>
     );
@@ -201,7 +247,7 @@ export default function Practice() {
     <View style={[styles.root, { paddingTop: insets.top + Spacing.sm }]}>
       <View style={styles.header}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={handleClose}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Close practice"
