@@ -1,0 +1,49 @@
+# Store-screenshot capture: drives the real app to each showcase screen and
+# saves raw captures for scripts/frame.js. Run on the hala_tab7 AVD.
+# Not part of the E2E suite (config only globs .maestro/0*.yaml).
+appId: com.hala.emirati.arabic
+---
+- launchApp:
+    clearState: true
+
+# Home with the Daily practice card.
+- tapOn: "Start learning"
+- assertVisible: "Daily practice"
+- takeScreenshot: store/screenshots/raw_home
+
+# Practice question.
+- tapOn: "Start"
+- assertVisible: "1 / 8"
+- takeScreenshot: store/screenshots/raw_question
+
+# Correct-answer reveal.
+- tapOn: "Peace be upon you"
+- assertVisible: "Correct!"
+- takeScreenshot: store/screenshots/raw_correct
+
+# Finish the session for the summary screen.
+- tapOn: "Next"
+- tapOn: "And peace be upon you"
+- tapOn: "Next"
+- tapOn: 'Hi / Welcome \(warm\)'
+- tapOn: "Next"
+- tapOn: "Welcome to you"
+- tapOn: "Next"
+- tapOn: "May God give you life"
+- tapOn: "Next"
+- tapOn: "Good morning"
+- tapOn: "Next"
+- tapOn: "Morning of light"
+- tapOn: "Next"
+- tapOn: "Good evening"
+- tapOn: "Finish"
+- assertVisible: "Session complete"
+- takeScreenshot: store/screenshots/raw_summary
+
+# Search in action (keyboard dismissed for a clean shot).
+- tapOn: "Done"
+- tapOn: "Search English, transliteration, or Arabic"
+- inputText: "morning"
+- assertVisible: "Good morning"
+- hideKeyboard
+- takeScreenshot: store/screenshots/raw_search

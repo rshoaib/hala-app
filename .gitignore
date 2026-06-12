@@ -66,3 +66,7 @@ coverage/
 *.tmp
 eas-submit-key-deprecated.json
 
+
+# store screenshot working files (regenerable via .maestro-store-shots.yaml + scripts/frame.js)
+store/screenshots/raw_*.png
+store/screenshots/framed/

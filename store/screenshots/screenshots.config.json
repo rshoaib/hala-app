@@ -1,0 +1,20 @@
+{
+  "_comment": "hala-app store screenshot framing — Desert Gold brand. Raw captures come from .maestro-store-shots.yaml run on the hala_tab7 AVD (1200x1920, sw600dp). Canvas 1242x2208 is exactly 9:16, valid for phone, 7-inch and 10-inch Play slots. cropTopPx 80 removes the emulator status bar (incl. the screen-record privacy chip).",
+  "brand": { "from": "#D4A328", "to": "#8A6716" },
+  "headlineColor": "#1E2340",
+  "canvas": { "w": 1242, "h": 2208 },
+  "cropTopPx": {
+    "raw_home.png": 80,
+    "raw_question.png": 80,
+    "raw_correct.png": 80,
+    "raw_summary.png": 80,
+    "raw_search.png": 80
+  },
+  "shots": [
+    { "file": "raw_home.png", "name": "home", "lines": ["Street-real Emirati,", "not textbook Arabic"] },
+    { "file": "raw_question.png", "name": "practice", "lines": ["Daily practice that", "sticks in memory"] },
+    { "file": "raw_correct.png", "name": "feedback", "lines": ["Learn from", "every answer"] },
+    { "file": "raw_summary.png", "name": "summary", "lines": ["Spaced repetition,", "built in"] },
+    { "file": "raw_search.png", "name": "search", "lines": ["Find any phrase", "in seconds"] }
+  ]
+}
