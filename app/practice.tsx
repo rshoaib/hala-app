@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Colors, FontSize, FontWeight, FontFamily, Spacing,
-  BorderRadius, Shadows, TextStyles, ComponentTokens,
+  BorderRadius, Shadows, TextStyles, ComponentTokens, Surfaces,
 } from '@/constants/theme';
 import { type Level, type Phrase } from '@/data/phrases';
 import * as Storage from '@/services/storageService';
@@ -372,8 +372,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   closeBtn: {
-    width: 44,
-    height: 44,
+    width: ComponentTokens.iconButton.size,
+    height: ComponentTokens.iconButton.size,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -397,10 +397,8 @@ const styles = StyleSheet.create({
   // ── Question ──
   scroll: { paddingHorizontal: Spacing.lg, flexGrow: 1 },
   promptCard: {
-    backgroundColor: Colors.card,
+    ...Surfaces.outlinedCard,
     borderRadius: BorderRadius.xl,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
     paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.lg,
     alignItems: 'center',
@@ -425,8 +423,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   speakBtn: {
-    width: 44,
-    height: 44,
+    width: ComponentTokens.iconButton.size,
+    height: ComponentTokens.iconButton.size,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.primaryMuted,
     alignItems: 'center',
@@ -437,6 +435,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   option: {
+    // Deliberate variant of Surfaces.outlinedCard: a selectable surface
+    // gets the heavier 1.5px border.
     minHeight: ComponentTokens.button.height,
     justifyContent: 'center',
     backgroundColor: Colors.card,
@@ -545,11 +545,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   summaryCard: {
+    ...Surfaces.outlinedCard,
     alignSelf: 'stretch',
-    backgroundColor: Colors.card,
     borderRadius: BorderRadius.xl,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
     padding: Spacing.lg,
     alignItems: 'center',
     marginBottom: Spacing.md,

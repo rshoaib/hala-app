@@ -27,7 +27,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import {
   Colors, FontSize, FontWeight, FontFamily, Spacing,
-  BorderRadius, Shadows, TextStyles, ComponentTokens,
+  BorderRadius, Shadows, TextStyles, ComponentTokens, Surfaces,
 } from '@/constants/theme';
 import {
   LEVELS,
@@ -381,20 +381,18 @@ const styles = StyleSheet.create({
   },
   pillTextActive: { color: Colors.textOnPrimary },
   practiceCard: {
+    ...Surfaces.outlinedCard,
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.md,
     padding: Spacing.md,
-    backgroundColor: Colors.card,
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
     ...Shadows.card,
   },
   practiceIcon: {
-    width: 40,
-    height: 40,
+    width: ComponentTokens.iconBadge.size,
+    height: ComponentTokens.iconBadge.size,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.primaryMuted,
     alignItems: 'center',
@@ -415,6 +413,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing['2xs'],
   },
   searchRow: {
+    ...Surfaces.outlinedCard,
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: Spacing.lg,
@@ -422,9 +421,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     height: ComponentTokens.input.height,
     borderRadius: ComponentTokens.input.borderRadius,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
   },
   searchIcon: { marginRight: Spacing.sm },
   searchInput: {
@@ -450,15 +446,13 @@ const styles = StyleSheet.create({
   },
   themeEmoji: { fontSize: FontSize.md },
   phraseRow: {
+    ...Surfaces.outlinedCard,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.card,
     borderRadius: BorderRadius.lg,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.md,
     marginBottom: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
   },
   phraseRowPressed: {
     backgroundColor: Colors.primarySoft,
@@ -487,8 +481,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   speakBtn: {
-    width: 40,
-    height: 40,
+    width: ComponentTokens.iconBadge.size,
+    height: ComponentTokens.iconBadge.size,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.primaryMuted,
     alignItems: 'center',
