@@ -1,14 +1,17 @@
 /**
  * Home — the Emirati Arabic phrase browser.
  *
- * Single screen. Three level pills at the top (Beginner / Intermediate /
- * Expert). A search box. A scrollable list of phrases grouped by theme.
- * Tap any phrase to hear it spoken via the device's Arabic TTS voice.
+ * Three level pills at the top (Beginner / Intermediate / Expert), a
+ * "Daily practice" card that opens the SRS session at /practice, a search
+ * box, and a scrollable list of phrases grouped by theme. Tap any phrase
+ * to hear it spoken via the device's Arabic TTS voice.
  *
- * On level change, we also reschedule the daily-phrase notification so
- * tomorrow's reminder uses the new level's pool.
+ * The practice card's count is per-level, so it refreshes on focus
+ * (returning from a session), on app re-foreground (a day boundary may
+ * have passed), and on level change. Level changes also reschedule the
+ * daily-phrase notification to use the new level's pool.
  */
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,13 +20,14 @@ import {
   Pressable,
   TextInput,
   ActivityIndicator,
+  AppState,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import {
   Colors, FontSize, FontWeight, FontFamily, Spacing,
-  BorderRadius, Shadows, TextStyles, ComponentTokens,
+  BorderRadius, Shadows, TextStyles, ComponentTokens, Surfaces,
 } from '@/constants/theme';
 import {
   LEVELS,
@@ -33,8 +37,10 @@ import {
   type PhraseTheme,
 } from '@/data/phrases';
 import * as Storage from '@/services/storageService';
+import * as SRS from '@/services/srsService';
 import { speakArabic } from '@/services/speechService';
 import { scheduleDailyPhrase } from '@/services/notificationService';
+import GoldButton from '@/components/GoldButton';
 
 export default function Home() {
   const router = useRouter();
@@ -42,6 +48,26 @@ export default function Home() {
   const [level, setLevelState] = useState<Level | null>(null);
   const [query, setQuery] = useState('');
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  // Size of the next practice session (null until first computed) and,
+  // when it's zero, how many days until the next review comes due.
+  const [practiceReady, setPracticeReady] = useState<number | null>(null);
+  const [nextDueDays, setNextDueDays] = useState<number | null>(null);
+  // Blocks a double-tap on Start from pushing /practice twice; re-armed
+  // by the focus effect when the user returns.
+  const navigatingRef = useRef(false);
+
+  // Derive the practice-card state from a level + schedule snapshot.
+  function applyPracticeCounts(lvl: Level, srsState: SRS.PracticeState) {
+    const now = Date.now();
+    const ready = SRS.buildSessionQueue(lvl, srsState, now).length;
+    setPracticeReady(ready);
+    if (ready === 0) {
+      const due = SRS.nextDueAt(lvl, srsState);
+      setNextDueDays(due === null ? null : SRS.daysUntil(due, now));
+    } else {
+      setNextDueDays(null);
+    }
+  }
 
   // Gate onboarding + load saved level on mount.
   useEffect(() => {
@@ -58,16 +84,44 @@ export default function Home() {
     return () => { cancelled = true; };
   }, [router]);
 
-  // Keep level in sync if changed in another screen.
+  // On focus: sync the level (it may have been a cold start) and refresh
+  // the practice card — answering a session reschedules phrases, so the
+  // count changes when the user comes back from /practice.
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-      Storage.getLevel().then((lvl) => {
-        if (!cancelled) setLevelState((prev) => prev ?? lvl);
-      });
+      (async () => {
+        const [lvl, srsState] = await Promise.all([
+          Storage.getLevel(),
+          Storage.getPracticeState(),
+        ]);
+        if (cancelled) return;
+        setLevelState((prev) => prev ?? lvl);
+        applyPracticeCounts(lvl, srsState);
+        navigatingRef.current = false;
+      })();
       return () => { cancelled = true; };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
   );
+
+  // Re-foreground: focus effects don't fire when the app returns from
+  // the background, but a day boundary may have passed and made phrases
+  // due (e.g. opening via the 7pm daily notification).
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (status) => {
+      if (status !== 'active') return;
+      (async () => {
+        const [lvl, srsState] = await Promise.all([
+          Storage.getLevel(),
+          Storage.getPracticeState(),
+        ]);
+        applyPracticeCounts(lvl, srsState);
+      })();
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const themes: PhraseTheme[] = useMemo(
     () => (level ? themesForLevel(level) : []),
@@ -96,6 +150,15 @@ export default function Home() {
     await Storage.setLevel(next);
     // Reschedule the daily notification to use the new level's pool.
     scheduleDailyPhrase();
+    // The practice queue is per-level, so the card count changes too.
+    const srsState = await Storage.getPracticeState();
+    applyPracticeCounts(next, srsState);
+  }
+
+  function handleStartPractice() {
+    if (navigatingRef.current) return;
+    navigatingRef.current = true;
+    router.push('/practice');
   }
 
   async function handleSpeak(phrase: Phrase) {
@@ -142,6 +205,32 @@ export default function Home() {
             </Pressable>
           );
         })}
+      </View>
+
+      <View style={styles.practiceCard}>
+        <View style={styles.practiceIcon}>
+          <Ionicons name="flash" size={20} color={Colors.primaryDark} />
+        </View>
+        <View style={styles.practiceInfo}>
+          <Text style={styles.practiceTitle}>Daily practice</Text>
+          <Text style={styles.practiceCaption}>
+            {practiceReady === null
+              ? ' '
+              : practiceReady > 0
+                ? `${practiceReady} phrase${practiceReady === 1 ? '' : 's'} ready`
+                : nextDueDays !== null && nextDueDays > 1
+                  ? `All caught up — next review in ${nextDueDays} days`
+                  : 'All caught up — back tomorrow'}
+          </Text>
+        </View>
+        {practiceReady !== null && practiceReady > 0 && (
+          <GoldButton
+            title="Start"
+            size="sm"
+            fullWidth={false}
+            onPress={handleStartPractice}
+          />
+        )}
       </View>
 
       <View style={styles.searchRow}>
@@ -291,7 +380,40 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   pillTextActive: { color: Colors.textOnPrimary },
+  practiceCard: {
+    ...Surfaces.outlinedCard,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    ...Shadows.card,
+  },
+  practiceIcon: {
+    width: ComponentTokens.iconBadge.size,
+    height: ComponentTokens.iconBadge.size,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.md,
+  },
+  practiceInfo: { flex: 1, marginRight: Spacing.sm },
+  practiceTitle: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeight.bold,
+    color: Colors.text,
+  },
+  practiceCaption: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.regular,
+    color: Colors.textSecondary,
+    marginTop: Spacing['2xs'],
+  },
   searchRow: {
+    ...Surfaces.outlinedCard,
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: Spacing.lg,
@@ -299,9 +421,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     height: ComponentTokens.input.height,
     borderRadius: ComponentTokens.input.borderRadius,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
   },
   searchIcon: { marginRight: Spacing.sm },
   searchInput: {
@@ -327,15 +446,13 @@ const styles = StyleSheet.create({
   },
   themeEmoji: { fontSize: FontSize.md },
   phraseRow: {
+    ...Surfaces.outlinedCard,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.card,
     borderRadius: BorderRadius.lg,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.md,
     marginBottom: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
   },
   phraseRowPressed: {
     backgroundColor: Colors.primarySoft,
@@ -364,8 +481,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   speakBtn: {
-    width: 40,
-    height: 40,
+    width: ComponentTokens.iconBadge.size,
+    height: ComponentTokens.iconBadge.size,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.primaryMuted,
     alignItems: 'center',

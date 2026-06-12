@@ -152,6 +152,23 @@ export const ComponentTokens = {
   buttonSm: { height: 44, borderRadius: 16 },
   input: { height: 48, borderRadius: BorderRadius.lg },
   pill: { height: 44 },
+  /** Interactive icon-only control — 44pt minimum tap target. */
+  iconButton: { size: 44 },
+  /** Decorative circular icon badge (card leads, row affordances). */
+  iconBadge: { size: 40 },
+} as const;
+
+// ── Composite Surfaces ──
+export const Surfaces = {
+  /**
+   * Standard outlined card: white surface with a hairline border.
+   * Radius and shadow vary by context, so they stay per-site.
+   */
+  outlinedCard: {
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
 } as const;
 
 // ── React Navigation Theme ──

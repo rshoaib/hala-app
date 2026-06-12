@@ -1,9 +1,8 @@
 /**
- * Root Layout — v3.1 (phrase browser + daily-phrase notification)
+ * Root Layout — v3.2 (phrase browser + daily practice + notification)
  *
- * Two real screens: home (the phrase browser, lives under the (tabs) group)
- * and onboarding. Older screens still exist as redirect-to-/today stubs and
- * are intentionally NOT registered here so they don't appear in navigation.
+ * Three real screens: home (the phrase browser, lives under the (tabs)
+ * group), the practice session, and onboarding.
  *
  * On launch we (re-)schedule the daily-phrase local notification so it
  * always reflects the user's most recently-picked level.
@@ -75,6 +74,7 @@ export default function RootLayout() {
             }}
           >
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="practice" />
             <Stack.Screen
               name="onboarding"
               options={{ gestureEnabled: false }}

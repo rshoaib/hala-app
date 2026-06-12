@@ -1,0 +1,53 @@
+# Core flow: the daily practice session. Answer all eight questions
+# correctly, reach the summary, return to the browser.
+#
+# Determinism: on a fresh install every phrase is unseen, so the queue is
+# the first eight Beginner phrases in curriculum order and the correct
+# option is each phrase's English gloss. Distractor strings are seeded by
+# phrase id and never duplicate the correct answer, so each tap target is
+# unique on screen. (Selectors are anchored regexes — parentheses in copy
+# must be escaped.)
+appId: com.hala.emirati.arabic
+---
+- launchApp:
+    clearState: true
+
+# Through onboarding onto the Beginner browser.
+- assertVisible: "Learn Emirati Arabic"
+- tapOn: "Start learning"
+- assertVisible: "Daily practice"
+- assertVisible: "8 phrases ready"
+
+# Into the session.
+- tapOn: "Start"
+- assertVisible: "1 / 8"
+
+# Q1–Q8: tap the English gloss of each Beginner phrase in curriculum order.
+- tapOn: "Peace be upon you"
+- assertVisible: "Correct!"
+- tapOn: "Next"
+- tapOn: "And peace be upon you"
+- tapOn: "Next"
+- tapOn: 'Hi / Welcome \(warm\)'
+- tapOn: "Next"
+- tapOn: "Welcome to you"
+- tapOn: "Next"
+- tapOn: "May God give you life"
+- tapOn: "Next"
+- tapOn: "Good morning"
+- tapOn: "Next"
+- tapOn: "Morning of light"
+- tapOn: "Next"
+- assertVisible: "8 / 8"
+- tapOn: "Good evening"
+- tapOn: "Finish"
+
+# Summary, then back home.
+- assertVisible: "Session complete"
+- assertVisible: "8 / 8"
+- assertVisible: "8 phrases in rotation"
+- tapOn: "Done"
+
+# Back on the browser; the card now reflects the next session's content.
+- assertVisible: "Daily practice"
+- assertVisible: "Peace be upon you"

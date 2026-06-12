@@ -1,20 +1,40 @@
 /**
- * Storage Service — v3.0 (phrase-browser only)
+ * Storage Service — v3.1 (phrase browser + daily practice)
  *
- * Persists exactly two pieces of user state:
- *   - whether onboarding has run (`@hala_onboarded`)
- *   - the user's chosen level    (`@hala_level`)
+ * Persists four pieces of user state:
+ *   - whether onboarding has run     (`@hala_onboarded`)
+ *   - the user's chosen level        (`@hala_level`)
+ *   - the SRS practice schedule      (`@hala_practice_v1`)
+ *   - practice session counters      (`@hala_practice_stats_v1`)
  *
- * Streak / XP / SRS / placement / weekly activity / freezes were all cut
- * in v3.0 along with the features that depended on them.
+ * Installs upgraded from v2 may still carry orphaned legacy keys
+ * (streak/XP/flashcard-schedule etc., cut in v3.0); `resetAllData`
+ * only clears the keys listed here.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Level } from '@/data/phrases';
+import {
+  INTERVAL_DAYS,
+  type PracticeRecord,
+  type PracticeState,
+} from '@/services/srsService';
 
 const KEYS = {
   ONBOARDED: '@hala_onboarded',
   LEVEL: '@hala_level',
+  PRACTICE: '@hala_practice_v1',
+  PRACTICE_STATS: '@hala_practice_stats_v1',
 } as const;
+
+/** Parse a stored JSON blob; null when missing, unreadable, or invalid. */
+async function readJson(key: string): Promise<unknown> {
+  try {
+    const raw = await AsyncStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as unknown) : null;
+  } catch {
+    return null;
+  }
+}
 
 const VALID_LEVELS: readonly Level[] = ['beginner', 'intermediate', 'expert'];
 
@@ -53,6 +73,76 @@ export async function getLevel(): Promise<Level> {
 export async function setLevel(level: Level): Promise<void> {
   try {
     await AsyncStorage.setItem(KEYS.LEVEL, level);
+  } catch {
+    /* swallow — non-fatal */
+  }
+}
+
+// ─── Practice (SRS) state ────────────────────────
+
+export async function getPracticeState(): Promise<PracticeState> {
+  const parsed = await readJson(KEYS.PRACTICE);
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return {};
+  }
+  // Keep only well-formed records — stage must index INTERVAL_DAYS and
+  // due must be a real timestamp — so a corrupt entry can't poison the
+  // SRS math (e.g. INTERVAL_DAYS[-2] → due: NaN → phrase never due).
+  const state: PracticeState = {};
+  for (const [id, value] of Object.entries(parsed)) {
+    const record = value as Partial<PracticeRecord> | null;
+    if (
+      record !== null &&
+      typeof record === 'object' &&
+      typeof record.stage === 'number' &&
+      Number.isInteger(record.stage) &&
+      record.stage >= 0 &&
+      record.stage < INTERVAL_DAYS.length &&
+      typeof record.due === 'number' &&
+      Number.isFinite(record.due)
+    ) {
+      state[id] = { stage: record.stage, due: record.due };
+    }
+  }
+  return state;
+}
+
+export async function setPracticeState(state: PracticeState): Promise<void> {
+  try {
+    await AsyncStorage.setItem(KEYS.PRACTICE, JSON.stringify(state));
+  } catch {
+    /* swallow — non-fatal */
+  }
+}
+
+// ─── Practice session counters ───────────────────
+// Success-metric instrumentation: completion rate = completed / started.
+
+export interface PracticeStats {
+  started: number;
+  completed: number;
+}
+
+const DEFAULT_STATS: PracticeStats = { started: 0, completed: 0 };
+
+export async function getPracticeStats(): Promise<PracticeStats> {
+  const parsed = await readJson(KEYS.PRACTICE_STATS);
+  const stats = parsed as Partial<PracticeStats> | null;
+  if (
+    stats !== null &&
+    typeof stats === 'object' &&
+    !Array.isArray(stats) &&
+    typeof stats.started === 'number' &&
+    typeof stats.completed === 'number'
+  ) {
+    return { started: stats.started, completed: stats.completed };
+  }
+  return DEFAULT_STATS;
+}
+
+export async function setPracticeStats(stats: PracticeStats): Promise<void> {
+  try {
+    await AsyncStorage.setItem(KEYS.PRACTICE_STATS, JSON.stringify(stats));
   } catch {
     /* swallow — non-fatal */
   }

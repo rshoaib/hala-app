@@ -1,10 +1,9 @@
 /**
- * (tabs) layout — v3.0
+ * (tabs) layout — v3.2
  *
- * Single-screen app: the only live route in this group is `today` (the
- * phrase browser, which is the home screen). `library` and `you` still
- * exist on disk as redirect-to-/ stubs but they aren't registered here,
- * so they're inert and unreachable through navigation.
+ * The only route in this group is `today` (the phrase browser, which is
+ * the home screen; `index` redirects to it). The practice session lives
+ * at the root level (`/practice`), pushed on top of this group.
  */
 import { Stack } from 'expo-router';
 import { Colors } from '@/constants/theme';
