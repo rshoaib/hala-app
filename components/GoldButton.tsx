@@ -1,19 +1,26 @@
 /**
  * GoldButton — Primary CTA with claymorphic block style
- * Solid color with 3D bottom-border press effect
+ * Solid color with 3D bottom-border press effect.
+ *
+ * Uses Pressable (not the legacy TouchableWithoutFeedback): the `disabled`
+ * prop blocks every interaction — press, press-in, press-out — so a
+ * disabled button can't bounce or fire its spring animation. The disabled
+ * style neutralizes the surface, borders, and shadows of all three
+ * variants so a disabled outline/accent button never looks active.
  */
 import { useRef } from 'react';
 import {
   Text,
   StyleSheet,
   Animated,
-  TouchableWithoutFeedback,
-  View,
+  Pressable,
   ViewStyle,
   TextStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontFamily, FontSize, FontWeight, Shadows, ComponentTokens, Spacing } from '@/constants/theme';
+import {
+  Colors, FontSize, Shadows, ComponentTokens, Spacing, fontStyle,
+} from '@/constants/theme';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -43,7 +50,6 @@ export default function GoldButton({
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
-    if (disabled) return;
     Animated.spring(scale, {
       toValue: 0.96,
       useNativeDriver: true,
@@ -53,7 +59,6 @@ export default function GoldButton({
   };
 
   const handlePressOut = () => {
-    if (disabled) return;
     Animated.spring(scale, {
       toValue: 1,
       useNativeDriver: true,
@@ -75,26 +80,28 @@ export default function GoldButton({
       ? styles.accent
       : styles.default;
 
-  const iconColor = isOutline ? Colors.primaryDark : Colors.textOnPrimary;
-  const textColor = isOutline ? Colors.primaryDark : Colors.textOnPrimary;
+  const baseTextColor = isOutline ? Colors.primaryDark : Colors.textOnPrimary;
+  const textColor = disabled ? Colors.textMuted : baseTextColor;
+  const iconColor = textColor;
 
   return (
-    <TouchableWithoutFeedback
-      onPress={disabled ? undefined : onPress}
+    <Pressable
+      onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityState={{ disabled }}
+      style={[fullWidth && { width: '100%' }, style]}
     >
       <Animated.View
         style={[
-          { transform: [{ scale }], opacity: disabled ? 0.5 : 1 },
+          { transform: [{ scale }], opacity: disabled ? 0.6 : 1 },
           fullWidth && { width: '100%' },
-          style,
         ]}
       >
-        <View
+        <Animated.View
           style={[
             styles.button,
             { height: heightMap[size], borderRadius: ComponentTokens.button.borderRadius },
@@ -107,7 +114,7 @@ export default function GoldButton({
               name={icon}
               size={iconSize[size]}
               color={iconColor}
-              style={{ marginRight: 8 }}
+              style={{ marginRight: Spacing.sm }}
             />
           )}
           <Text
@@ -119,9 +126,9 @@ export default function GoldButton({
           >
             {title}
           </Text>
-        </View>
+        </Animated.View>
       </Animated.View>
-    </TouchableWithoutFeedback>
+    </Pressable>
   );
 }
 
@@ -133,9 +140,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   text: {
-    fontWeight: FontWeight.bold,
-    fontFamily: FontFamily.bold,
-    letterSpacing: 0.3,
+    ...fontStyle('bold'),
+    letterSpacing: ComponentTokens.button.letterSpacing,
   },
   default: {
     backgroundColor: Colors.primary,
@@ -159,7 +165,16 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  // Neutralizes every variant: flat disabled surface, no colored borders,
+  // no shadow. Listed last so it wins over the variant style.
   disabled: {
     backgroundColor: Colors.disabled,
+    borderWidth: 0,
+    borderBottomWidth: 0,
+    borderColor: 'transparent',
+    borderBottomColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
 });

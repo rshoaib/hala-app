@@ -1,25 +1,25 @@
 /**
  * Home — the Emirati Arabic phrase browser.
  *
- * Three level pills at the top (Beginner / Intermediate / Expert), a
+ * A streak/XP bar, three level pills (Beginner / Intermediate / Expert), a
  * "Daily practice" card that opens the SRS session at /practice, a search
- * box, and a scrollable list of phrases grouped by theme. Tap any phrase
+ * box, and a virtualized list of phrases grouped by theme. Tap any phrase
  * to hear it spoken via the device's Arabic TTS voice.
  *
  * The practice card's count is per-level, so it refreshes on focus
  * (returning from a session), on app re-foreground (a day boundary may
- * have passed), and on level change. Level changes also reschedule the
- * daily-phrase notification to use the new level's pool.
+ * have passed), on level change, and on pull-to-refresh. Level changes also
+ * reschedule the daily-phrase notification to use the new level's pool.
  */
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  SectionList,
   Pressable,
   TextInput,
-  ActivityIndicator,
+  RefreshControl,
   AppState,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,9 +38,22 @@ import {
 } from '@/data/phrases';
 import * as Storage from '@/services/storageService';
 import * as SRS from '@/services/srsService';
+import {
+  practicedToday,
+  DEFAULT_GAMIFICATION,
+  type GamificationState,
+} from '@/services/gamificationService';
 import { speakArabic } from '@/services/speechService';
 import { scheduleDailyPhrase } from '@/services/notificationService';
 import GoldButton from '@/components/GoldButton';
+import StreakXpBar from '@/components/StreakXpBar';
+
+interface PhraseSection {
+  id: string;
+  title: string;
+  emoji: string;
+  data: Phrase[];
+}
 
 export default function Home() {
   const router = useRouter();
@@ -48,6 +61,8 @@ export default function Home() {
   const [level, setLevelState] = useState<Level | null>(null);
   const [query, setQuery] = useState('');
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [gam, setGam] = useState<GamificationState>(DEFAULT_GAMIFICATION);
+  const [refreshing, setRefreshing] = useState(false);
   // Size of the next practice session (null until first computed) and,
   // when it's zero, how many days until the next review comes due.
   const [practiceReady, setPracticeReady] = useState<number | null>(null);
@@ -69,7 +84,7 @@ export default function Home() {
     }
   }
 
-  // Gate onboarding + load saved level on mount.
+  // Gate onboarding + load saved level / gamification on mount.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -78,25 +93,35 @@ export default function Home() {
         router.replace('/onboarding');
         return;
       }
-      const stored = await Storage.getLevel();
-      if (!cancelled) setLevelState(stored);
+      const [stored, g] = await Promise.all([
+        Storage.getLevel(),
+        Storage.getGamificationState(),
+      ]);
+      if (!cancelled) {
+        setLevelState(stored);
+        setGam(g);
+      }
     })();
     return () => { cancelled = true; };
-  }, [router]);
+    // Init-only: `router` is stable and not a re-run trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // On focus: sync the level (it may have been a cold start) and refresh
-  // the practice card — answering a session reschedules phrases, so the
-  // count changes when the user comes back from /practice.
+  // the practice card + streak — answering a session reschedules phrases
+  // and grants XP, so both change when the user returns from /practice.
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
       (async () => {
-        const [lvl, srsState] = await Promise.all([
+        const [lvl, srsState, g] = await Promise.all([
           Storage.getLevel(),
           Storage.getPracticeState(),
+          Storage.getGamificationState(),
         ]);
         if (cancelled) return;
         setLevelState((prev) => prev ?? lvl);
+        setGam(g);
         applyPracticeCounts(lvl, srsState);
         navigatingRef.current = false;
       })();
@@ -112,10 +137,12 @@ export default function Home() {
     const sub = AppState.addEventListener('change', (status) => {
       if (status !== 'active') return;
       (async () => {
-        const [lvl, srsState] = await Promise.all([
+        const [lvl, srsState, g] = await Promise.all([
           Storage.getLevel(),
           Storage.getPracticeState(),
+          Storage.getGamificationState(),
         ]);
+        setGam(g);
         applyPracticeCounts(lvl, srsState);
       })();
     });
@@ -123,24 +150,46 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const [lvl, srsState, g] = await Promise.all([
+        Storage.getLevel(),
+        Storage.getPracticeState(),
+        Storage.getGamificationState(),
+      ]);
+      setGam(g);
+      applyPracticeCounts(lvl, srsState);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
   const themes: PhraseTheme[] = useMemo(
     () => (level ? themesForLevel(level) : []),
     [level]
   );
 
-  const filteredThemes: PhraseTheme[] = useMemo(() => {
+  const sections: PhraseSection[] = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return themes;
-    return themes
-      .map((t) => ({
-        ...t,
-        phrases: t.phrases.filter((p) =>
-          p.english.toLowerCase().includes(q) ||
-          p.transliteration.toLowerCase().includes(q) ||
-          p.arabic.includes(query.trim())
-        ),
-      }))
-      .filter((t) => t.phrases.length > 0);
+    const matched = !q
+      ? themes
+      : themes
+          .map((t) => ({
+            ...t,
+            phrases: t.phrases.filter((p) =>
+              p.english.toLowerCase().includes(q) ||
+              p.transliteration.toLowerCase().includes(q) ||
+              p.arabic.includes(query.trim())
+            ),
+          }))
+          .filter((t) => t.phrases.length > 0);
+    return matched.map((t) => ({
+      id: t.id,
+      title: t.title,
+      emoji: t.emoji,
+      data: t.phrases,
+    }));
   }, [themes, query]);
 
   async function handleLevelChange(next: Level) {
@@ -172,14 +221,10 @@ export default function Home() {
   }
 
   if (!level) {
-    return (
-      <View style={[styles.root, styles.loading]}>
-        <ActivityIndicator color={Colors.primary} />
-      </View>
-    );
+    return <HomeSkeleton topInset={insets.top} />;
   }
 
-  const totalPhrases = filteredThemes.reduce((n, t) => n + t.phrases.length, 0);
+  const totalPhrases = sections.reduce((n, s) => n + s.data.length, 0);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -188,14 +233,19 @@ export default function Home() {
         <Text style={styles.title}>Emirati Arabic</Text>
       </View>
 
-      <View style={styles.pillRow}>
+      <StreakXpBar state={gam} active={practicedToday(gam, Date.now())} />
+
+      <View
+        style={styles.pillRow}
+        accessibilityRole="tablist"
+      >
         {LEVELS.map((l) => {
           const active = l.id === level;
           return (
             <Pressable
               key={l.id}
               onPress={() => handleLevelChange(l.id)}
-              accessibilityRole="button"
+              accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               style={[styles.pill, active && styles.pillActive]}
             >
@@ -215,7 +265,7 @@ export default function Home() {
           <Text style={styles.practiceTitle}>Daily practice</Text>
           <Text style={styles.practiceCaption}>
             {practiceReady === null
-              ? ' '
+              ? '​'
               : practiceReady > 0
                 ? `${practiceReady} phrase${practiceReady === 1 ? '' : 's'} ready`
                 : nextDueDays !== null && nextDueDays > 1
@@ -264,78 +314,114 @@ export default function Home() {
         )}
       </View>
 
-      <ScrollView
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        stickySectionHeadersEnabled={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.list,
           { paddingBottom: insets.bottom + Spacing.xl },
         ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {filteredThemes.length === 0 ? (
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
+            colors={[Colors.primary]}
+          />
+        }
+        ListHeaderComponent={
+          totalPhrases > 0 ? (
+            <Text style={styles.count}>
+              {totalPhrases} phrase{totalPhrases === 1 ? '' : 's'}
+            </Text>
+          ) : null
+        }
+        ListEmptyComponent={
           <View style={styles.empty}>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="search" size={28} color={Colors.textMuted} />
+            </View>
             <Text style={styles.emptyTitle}>No matching phrases</Text>
             <Text style={styles.emptyBody}>
               Try a different search or switch levels.
             </Text>
           </View>
-        ) : (
-          <>
-            <Text style={styles.count}>
-              {totalPhrases} phrase{totalPhrases === 1 ? '' : 's'}
-            </Text>
-            {filteredThemes.map((theme) => (
-              <View key={theme.id} style={styles.themeBlock}>
-                <Text style={styles.themeTitle}>
-                  <Text style={styles.themeEmoji}>{theme.emoji}  </Text>
-                  {theme.title}
-                </Text>
-                {theme.phrases.map((p) => (
-                  <Pressable
-                    key={p.id}
-                    onPress={() => handleSpeak(p)}
-                    accessibilityRole="button"
-                    accessibilityHint="Plays the Arabic pronunciation"
-                    style={({ pressed }) => [
-                      styles.phraseRow,
-                      pressed && styles.phraseRowPressed,
-                    ]}
-                  >
-                    <View style={styles.phraseMain}>
-                      <Text style={styles.arabic}>{p.arabic}</Text>
-                      <Text style={styles.transliteration}>
-                        {p.transliteration}
-                      </Text>
-                      <Text style={styles.english}>{p.english}</Text>
-                    </View>
-                    <View style={styles.speakBtn}>
-                      {speakingId === p.id ? (
-                        <ActivityIndicator
-                          size="small"
-                          color={Colors.primaryDark}
-                        />
-                      ) : (
-                        <Ionicons
-                          name="volume-high"
-                          size={20}
-                          color={Colors.primaryDark}
-                        />
-                      )}
-                    </View>
-                  </Pressable>
-                ))}
-              </View>
-            ))}
-          </>
+        }
+        renderSectionHeader={({ section }) => (
+          <View style={styles.themeHeader}>
+            <View style={styles.themeEmojiBox}>
+              <Text style={styles.themeEmoji}>{section.emoji}</Text>
+            </View>
+            <Text style={styles.themeTitle}>{section.title}</Text>
+          </View>
         )}
-      </ScrollView>
+        renderItem={({ item: p }) => (
+          <Pressable
+            onPress={() => handleSpeak(p)}
+            accessibilityRole="button"
+            accessibilityHint="Plays the Arabic pronunciation"
+            style={({ pressed }) => [
+              styles.phraseRow,
+              pressed && styles.phraseRowPressed,
+            ]}
+          >
+            <View style={styles.phraseMain}>
+              <Text style={styles.arabic}>{p.arabic}</Text>
+              <Text style={styles.transliteration}>{p.transliteration}</Text>
+              <Text style={styles.english}>{p.english}</Text>
+            </View>
+            <View style={styles.speakBtn}>
+              {speakingId === p.id ? (
+                <Ionicons name="volume-high" size={20} color={Colors.primary} />
+              ) : (
+                <Ionicons
+                  name="volume-high"
+                  size={20}
+                  color={Colors.primaryDark}
+                />
+              )}
+            </View>
+          </Pressable>
+        )}
+      />
+    </View>
+  );
+}
+
+/** Gray-block placeholder mimicking the home layout while state loads. */
+function HomeSkeleton({ topInset }: { topInset: number }) {
+  return (
+    <View style={[styles.root, { paddingTop: topInset }]}>
+      <View style={styles.header}>
+        <View style={[styles.skel, { width: 48, height: 12, marginBottom: Spacing.xs }]} />
+        <View style={[styles.skel, { width: 200, height: 30 }]} />
+      </View>
+      <View style={styles.skelRow}>
+        <View style={[styles.skel, styles.skelStreak]} />
+        <View style={[styles.skel, styles.skelXp]} />
+      </View>
+      <View style={styles.pillRow}>
+        {[0, 1, 2].map((i) => (
+          <View key={i} style={[styles.skel, styles.skelPill]} />
+        ))}
+      </View>
+      <View style={[styles.skel, styles.skelCard]} />
+      <View style={[styles.skel, styles.skelSearch]} />
+      <View style={styles.list}>
+        {[0, 1, 2, 3].map((i) => (
+          <View key={i} style={[styles.skel, styles.skelPhrase]} />
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  loading: { alignItems: 'center', justifyContent: 'center' },
   header: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
@@ -343,7 +429,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     ...TextStyles.eyebrow,
-    marginBottom: Spacing['2xs'],
+    marginBottom: Spacing.xxs,
   },
   title: {
     fontSize: FontSize.xxl,
@@ -410,7 +496,7 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontFamily: FontFamily.regular,
     color: Colors.textSecondary,
-    marginTop: Spacing['2xs'],
+    marginTop: Spacing.xxs,
   },
   searchRow: {
     ...Surfaces.outlinedCard,
@@ -436,15 +522,26 @@ const styles = StyleSheet.create({
     ...TextStyles.label,
     marginBottom: Spacing.sm,
   },
-  themeBlock: { marginBottom: Spacing.lg },
+  themeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+    backgroundColor: Colors.background,
+  },
+  themeEmojiBox: {
+    width: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.xs,
+  },
+  themeEmoji: { fontSize: FontSize.md },
   themeTitle: {
+    flex: 1,
     fontSize: FontSize.md,
     fontFamily: FontFamily.bold,
     fontWeight: FontWeight.bold,
     color: Colors.text,
-    marginBottom: Spacing.sm,
   },
-  themeEmoji: { fontSize: FontSize.md },
   phraseRow: {
     ...Surfaces.outlinedCard,
     flexDirection: 'row',
@@ -465,7 +562,7 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: Colors.text,
     textAlign: 'right',
-    marginBottom: 2,
+    marginBottom: Spacing.xxs,
     writingDirection: 'rtl',
   },
   transliteration: {
@@ -478,7 +575,7 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontFamily: FontFamily.regular,
     color: Colors.textSecondary,
-    marginTop: 2,
+    marginTop: Spacing.xxs,
   },
   speakBtn: {
     width: ComponentTokens.iconBadge.size,
@@ -493,6 +590,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: Spacing.xxl,
   },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.md,
+  },
   emptyTitle: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.bold,
@@ -504,5 +610,37 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontFamily: FontFamily.regular,
     color: Colors.textSecondary,
+  },
+
+  // ── Skeleton ──
+  skel: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.md,
+  },
+  skelRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  skelStreak: { width: 96, height: 56, borderRadius: BorderRadius.lg },
+  skelXp: { flex: 1, height: 56, borderRadius: BorderRadius.lg },
+  skelPill: { flex: 1, height: ComponentTokens.pill.height, borderRadius: BorderRadius.full },
+  skelCard: {
+    height: 72,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    borderRadius: BorderRadius.lg,
+  },
+  skelSearch: {
+    height: ComponentTokens.input.height,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  skelPhrase: {
+    height: 88,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.sm,
   },
 });

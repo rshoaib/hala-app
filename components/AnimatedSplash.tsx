@@ -6,6 +6,9 @@
  * - Gold shimmer effect
  * - Motivational tagline fade-in
  * - Smooth fade-out transition
+ *
+ * Every timer and looping animation is tracked and torn down on unmount
+ * (or tap-to-skip), so nothing fires on an unmounted component.
  */
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -13,17 +16,17 @@ import {
   Text,
   StyleSheet,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   Image,
   Pressable,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  Colors, FontSize, FontWeight, FontFamily, BorderRadius,
+  Colors, FontSize, FontWeight, FontFamily, BorderRadius, Spacing,
 } from '@/constants/theme';
 
-const { width, height } = Dimensions.get('window');
-
-// Floating Arabic letters that drift across the screen
+// Floating Arabic letters that drift across the screen. Positions are
+// fractions of the live window size (resolved at render).
 const FLOATING_LETTERS = [
   { char: 'أ', x: 0.1, y: 0.15, size: 28, delay: 200 },
   { char: 'ب', x: 0.8, y: 0.2, size: 22, delay: 400 },
@@ -49,6 +52,8 @@ interface AnimatedSplashProps {
 }
 
 export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const [greetingIndex, setGreetingIndex] = useState(0);
   const finished = useRef(false);
 
@@ -56,12 +61,16 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
   const logoScale = useRef(new Animated.Value(0.3)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const glowPulse = useRef(new Animated.Value(0.3)).current;
+  // Constant base offset for the glow's scale. Hoisted into a ref so the
+  // animation graph keeps a stable node identity across re-renders —
+  // creating `new Animated.Value(0.8)` inline every render froze the pulse.
+  const glowBase = useRef(new Animated.Value(0.8)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
   const taglineTranslateY = useRef(new Animated.Value(20)).current;
   const greetingOpacity = useRef(new Animated.Value(0)).current;
   const greetingScale = useRef(new Animated.Value(0.8)).current;
   const overallOpacity = useRef(new Animated.Value(1)).current;
-  const shimmerTranslate = useRef(new Animated.Value(-width)).current;
+  const shimmerTranslate = useRef(new Animated.Value(0)).current;
   const progressWidth = useRef(new Animated.Value(0)).current;
 
   // Floating letter animations
@@ -73,133 +82,170 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
     }))
   ).current;
 
+  // Teardown registries: every setTimeout id and every running animation
+  // is recorded so the cleanup can cancel them all on unmount / skip.
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const anims = useRef<Animated.CompositeAnimation[]>([]);
+
+  const track = (anim: Animated.CompositeAnimation) => {
+    anims.current.push(anim);
+    return anim;
+  };
+  const after = (ms: number, fn: () => void) => {
+    timers.current.push(setTimeout(fn, ms));
+  };
+
   useEffect(() => {
     startAnimationSequence();
+    return () => {
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+      anims.current.forEach((a) => a.stop());
+      anims.current = [];
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function startAnimationSequence() {
     // Phase 1: Logo appears with spring bounce (0-800ms)
-    Animated.parallel([
-      Animated.spring(logoScale, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.timing(logoOpacity, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Phase 1b: Gold glow pulsing behind logo
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowPulse, {
+    track(
+      Animated.parallel([
+        Animated.spring(logoScale, {
           toValue: 1,
-          duration: 1200,
+          tension: 50,
+          friction: 7,
           useNativeDriver: true,
         }),
-        Animated.timing(glowPulse, {
-          toValue: 0.3,
-          duration: 1200,
+        Animated.timing(logoOpacity, {
+          toValue: 1,
+          duration: 600,
           useNativeDriver: true,
         }),
       ])
     ).start();
 
+    // Phase 1b: Gold glow pulsing behind logo
+    track(
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(glowPulse, {
+            toValue: 1,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowPulse, {
+            toValue: 0.3,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+        ])
+      )
+    ).start();
+
     // Phase 1c: Shimmer sweep across logo
-    Animated.loop(
-      Animated.timing(shimmerTranslate, {
-        toValue: width,
-        duration: 2000,
-        useNativeDriver: true,
-      })
+    shimmerTranslate.setValue(-width);
+    track(
+      Animated.loop(
+        Animated.timing(shimmerTranslate, {
+          toValue: width,
+          duration: 2000,
+          useNativeDriver: true,
+        })
+      )
     ).start();
 
     // Phase 2: Floating letters appear (300-1200ms)
     letterAnims.forEach((anim, i) => {
       const delay = 300 + FLOATING_LETTERS[i].delay;
-      setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(anim.opacity, {
-            toValue: 0.15,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.spring(anim.translateY, {
-            toValue: 0,
-            tension: 40,
-            friction: 8,
-            useNativeDriver: true,
-          }),
-          Animated.spring(anim.scale, {
-            toValue: 1,
-            tension: 50,
-            friction: 6,
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        // Gentle float animation
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(anim.translateY, {
-              toValue: -8,
-              duration: 2000 + i * 200,
+      after(delay, () => {
+        track(
+          Animated.parallel([
+            Animated.timing(anim.opacity, {
+              toValue: 0.15,
+              duration: 800,
               useNativeDriver: true,
             }),
-            Animated.timing(anim.translateY, {
-              toValue: 8,
-              duration: 2000 + i * 200,
+            Animated.spring(anim.translateY, {
+              toValue: 0,
+              tension: 40,
+              friction: 8,
+              useNativeDriver: true,
+            }),
+            Animated.spring(anim.scale, {
+              toValue: 1,
+              tension: 50,
+              friction: 6,
               useNativeDriver: true,
             }),
           ])
         ).start();
-      }, delay);
+
+        // Gentle float animation
+        track(
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(anim.translateY, {
+                toValue: -8,
+                duration: 2000 + i * 200,
+                useNativeDriver: true,
+              }),
+              Animated.timing(anim.translateY, {
+                toValue: 8,
+                duration: 2000 + i * 200,
+                useNativeDriver: true,
+              }),
+            ])
+          )
+        ).start();
+      });
     });
 
     // Phase 3: Tagline slides up (800ms)
-    setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(taglineOpacity, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.spring(taglineTranslateY, {
-          toValue: 0,
-          tension: 60,
-          friction: 10,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }, 800);
+    after(800, () => {
+      track(
+        Animated.parallel([
+          Animated.timing(taglineOpacity, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.spring(taglineTranslateY, {
+            toValue: 0,
+            tension: 60,
+            friction: 10,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    });
 
     // Phase 4: Greeting cycle (1200-2800ms)
-    setTimeout(() => showGreeting(0), 1200);
+    after(1200, () => showGreeting(0));
 
     // Phase 5: Progress bar fills (0-3000ms)
-    Animated.timing(progressWidth, {
-      toValue: 1,
-      duration: 3000,
-      useNativeDriver: false,
-    }).start();
+    track(
+      Animated.timing(progressWidth, {
+        toValue: 1,
+        duration: 3000,
+        useNativeDriver: false,
+      })
+    ).start();
 
     // Phase 6: Fade out everything (3200ms)
-    setTimeout(() => finish(500), 3200);
+    after(3200, () => finish(500));
   }
 
   // Single exit path — used by the timed fade-out and by tap-to-skip.
   function finish(duration: number) {
     if (finished.current) return;
     finished.current = true;
-    Animated.timing(overallOpacity, {
-      toValue: 0,
-      duration,
-      useNativeDriver: true,
-    }).start(() => {
+    track(
+      Animated.timing(overallOpacity, {
+        toValue: 0,
+        duration,
+        useNativeDriver: true,
+      })
+    ).start(() => {
       onFinish();
     });
   }
@@ -208,33 +254,37 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
     if (index >= GREETINGS.length) return;
 
     setGreetingIndex(index);
-    Animated.parallel([
-      Animated.timing(greetingOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.spring(greetingScale, {
-        toValue: 1,
-        tension: 80,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    track(
+      Animated.parallel([
+        Animated.timing(greetingOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(greetingScale, {
+          toValue: 1,
+          tension: 80,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
 
-    // Fade out after 500ms, show next
-    setTimeout(() => {
-      Animated.timing(greetingOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start(() => {
+    // Fade out after 600ms, show next
+    after(600, () => {
+      track(
+        Animated.timing(greetingOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ).start(() => {
         greetingScale.setValue(0.8);
         if (index + 1 < GREETINGS.length) {
           showGreeting(index + 1);
         }
       });
-    }, 600);
+    });
   }
 
   return (
@@ -280,7 +330,7 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
               opacity: glowPulse,
               transform: [
                 {
-                  scale: Animated.add(glowPulse, new Animated.Value(0.8)),
+                  scale: Animated.add(glowPulse, glowBase),
                 },
               ],
             },
@@ -309,7 +359,8 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
           style={[
             styles.shimmer,
             {
-              transform: [{ translateX: shimmerTranslate }],
+              height,
+              transform: [{ translateX: shimmerTranslate }, { skewX: '-20deg' }],
             },
           ]}
         />
@@ -346,8 +397,13 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
           </Text>
         </Animated.View>
 
-        {/* Progress bar at bottom */}
-        <View style={styles.progressContainer}>
+        {/* Progress bar at bottom — clears the home indicator / nav bar */}
+        <View
+          style={[
+            styles.progressContainer,
+            { width: width * 0.5, bottom: insets.bottom + Spacing.xxl },
+          ]}
+        >
           <Animated.View
             style={[
               styles.progressBar,
@@ -406,13 +462,11 @@ const styles = StyleSheet.create({
   shimmer: {
     position: 'absolute',
     width: 60,
-    height: height,
     backgroundColor: Colors.shimmer,
-    transform: [{ skewX: '-20deg' }],
   },
   taglineContainer: {
     alignItems: 'center',
-    marginTop: 28,
+    marginTop: Spacing.xl,
   },
   appName: {
     fontSize: FontSize.xxxl,
@@ -425,12 +479,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontFamily: FontFamily.regular,
     color: Colors.textSecondary,
-    marginTop: 4,
+    marginTop: Spacing.xs,
     letterSpacing: 1,
   },
   greetingContainer: {
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: Spacing.xl,
     minHeight: 60,
   },
   greetingAr: {
@@ -443,12 +497,10 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontFamily: FontFamily.regular,
     color: Colors.textSecondary,
-    marginTop: 4,
+    marginTop: Spacing.xs,
   },
   progressContainer: {
     position: 'absolute',
-    bottom: 80,
-    width: width * 0.5,
     height: 3,
     backgroundColor: Colors.goldGlowDeep,
     borderRadius: BorderRadius.full,

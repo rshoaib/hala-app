@@ -1,7 +1,7 @@
 /**
  * Root Layout — v3.2 (phrase browser + daily practice + notification)
  *
- * Three real screens: home (the phrase browser, lives under the (tabs)
+ * Three real screens: home (the phrase browser, lives under the (main)
  * group), the practice session, and onboarding.
  *
  * On launch we (re-)schedule the daily-phrase local notification so it
@@ -25,7 +25,7 @@ import { scheduleDailyPhrase } from '@/services/notificationService';
 export { ErrorBoundary } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: '(tabs)',
+  initialRouteName: '(main)',
 };
 
 SplashScreen.preventAutoHideAsync();
@@ -43,6 +43,9 @@ export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
+    // Permit the OS to mirror the layout on Arabic-locale devices. The app's
+    // own UI is English (LTR); Arabic strings opt into RTL per-Text via
+    // `writingDirection`. We allow but never force RTL.
     if (!I18nManager.isRTL) {
       I18nManager.allowRTL(true);
     }
@@ -73,14 +76,17 @@ export default function RootLayout() {
               contentStyle: { backgroundColor: Colors.background },
             }}
           >
-            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="(main)" />
             <Stack.Screen name="practice" />
             <Stack.Screen
               name="onboarding"
               options={{ gestureEnabled: false }}
             />
           </Stack>
-          <StatusBar style="dark" />
+          {/* Both splash (#FBF7F0) and app (#F6F7FB) backgrounds are light,
+              so dark status-bar content is correct; `auto` keeps it adapting
+              if a dark theme is ever introduced. */}
+          <StatusBar style="auto" />
         </ThemeProvider>
         {showSplash && (
           <AnimatedSplash onFinish={() => setShowSplash(false)} />

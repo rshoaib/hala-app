@@ -72,7 +72,9 @@ function bgSvg() {
   );
 }
 function headlineSvg(lines) {
-  const fs1 = 78, lh = 96, top = 150;
+  // Scale the headline with the canvas so larger (tablet) canvases keep
+  // the same visual weight as the 1242x2208 default.
+  const fs1 = Math.round(CW * 0.0628), lh = Math.round(fs1 * 1.23), top = Math.round(CW * 0.1208);
   const t = (lines || [])
     .map((l, i) => `<text x="${CW / 2}" y="${top + i * lh}" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="${fs1}" fill="${HEAD}" text-anchor="middle">${esc(l)}</text>`)
     .join('');

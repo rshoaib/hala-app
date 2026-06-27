@@ -1,20 +1,30 @@
 import { Stack, Link } from 'expo-router';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Colors, Spacing, FontSize, FontWeight, FontFamily, BorderRadius,
 } from '@/constants/theme';
 
 export default function NotFoundScreen() {
+  const insets = useSafeAreaInsets();
   return (
     <>
       <Stack.Screen options={{ title: 'Not found' }} />
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing.xl },
+        ]}
+      >
         <Text style={styles.emoji}>🤷</Text>
         <Text style={styles.title}>This screen doesn't exist.</Text>
         <Link href="/today" asChild>
-          <TouchableOpacity accessibilityRole="button" style={styles.button}>
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          >
             <Text style={styles.buttonText}>Go home</Text>
-          </TouchableOpacity>
+          </Pressable>
         </Link>
       </View>
     </>
@@ -27,7 +37,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
   },
   emoji: {
     fontSize: 64,
@@ -45,6 +55,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.md,
     marginTop: Spacing.lg,
+  },
+  buttonPressed: {
+    opacity: 0.85,
   },
   buttonText: {
     color: Colors.textOnPrimary,

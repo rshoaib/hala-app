@@ -67,7 +67,7 @@ export const FontWeight = {
   bold: '700' as const,
   extraBold: '800' as const,
   black: '900' as const,
-};
+} as const;
 
 export const FontFamily = {
   regular: 'Nunito-Regular',
@@ -77,6 +77,19 @@ export const FontFamily = {
   extraBold: 'Nunito-ExtraBold',
   black: 'Nunito-Black',
 } as const;
+
+/**
+ * Pairs the matching Nunito file (`fontFamily`) with its numeric
+ * `fontWeight`. Android picks the weight from the loaded font file; iOS
+ * needs the explicit `fontWeight` too. Use this instead of hand-writing
+ * both properties so the two never drift out of sync.
+ */
+export function fontStyle(weight: keyof typeof FontFamily) {
+  return {
+    fontFamily: FontFamily[weight],
+    fontWeight: FontWeight[weight],
+  } as const;
+}
 
 // ── Composite Text Styles ──
 export const TextStyles = {
@@ -99,15 +112,16 @@ export const TextStyles = {
 } as const;
 
 // ── Spacing ──
+// All keys are bare identifiers so every site uses dot access (Spacing.xxs).
 export const Spacing = {
-  '2xs': 2,
+  xxs: 2,
   xs: 4,
   sm: 8,
   md: 16,
   lg: 24,
   xl: 32,
   xxl: 48,
-  '3xl': 64,
+  xxxl: 64,
 } as const;
 
 // ── Border Radius ──
@@ -148,7 +162,7 @@ export const Shadows = {
 
 // ── Component Tokens ──
 export const ComponentTokens = {
-  button: { height: 56, borderRadius: 20 },
+  button: { height: 56, borderRadius: 20, letterSpacing: 0.3 },
   buttonSm: { height: 44, borderRadius: 16 },
   input: { height: 48, borderRadius: BorderRadius.lg },
   pill: { height: 44 },

@@ -146,7 +146,7 @@ const food: Phrase[] = [
   { id: 'fd-014', arabic: 'لذيذ',    transliteration: 'ladheedh', english: 'Delicious',    category: 'response',   level: 'beginner' },
   { id: 'fd-015', arabic: 'جوعان',   transliteration: 'jou\'an', english: 'Hungry (m)',    category: 'expression', level: 'beginner' },
   { id: 'fd-016', arabic: 'عطشان',   transliteration: 'atshan',  english: 'Thirsty (m)',   category: 'expression', level: 'beginner' },
-  { id: 'fd-017', arabic: 'أبا',     transliteration: 'aba',     english: 'I want',        category: 'expression', level: 'beginner' },
+  // Note: "I want" (أبا) lives in Basic Verbs as vb-001 — no duplicate here.
 ];
 
 const verbsBasic: Phrase[] = [

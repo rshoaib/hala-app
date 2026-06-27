@@ -1,0 +1,20 @@
+{
+  "_comment": "hala-app 10-inch tablet framing. Raw captures: run .maestro-store-shots.yaml on the hala_tab10 AVD (1600x2560), then move store/screenshots/raw_*.png here and run `node scripts/frame.js --dir store/screenshots-10`. Canvas 1620x2880 is exactly 9:16 with both sides >=1080, per the Play 10-inch slot rules (sides 1080-7680).",
+  "brand": { "from": "#D4A328", "to": "#8A6716" },
+  "headlineColor": "#1E2340",
+  "canvas": { "w": 1620, "h": 2880 },
+  "cropTopPx": {
+    "raw_home.png": 80,
+    "raw_question.png": 80,
+    "raw_correct.png": 80,
+    "raw_summary.png": 80,
+    "raw_search.png": 80
+  },
+  "shots": [
+    { "file": "raw_home.png", "name": "home", "lines": ["Street-real Emirati,", "not textbook Arabic"] },
+    { "file": "raw_question.png", "name": "practice", "lines": ["Daily practice that", "sticks in memory"] },
+    { "file": "raw_correct.png", "name": "feedback", "lines": ["Learn from", "every answer"] },
+    { "file": "raw_summary.png", "name": "summary", "lines": ["Spaced repetition,", "built in"] },
+    { "file": "raw_search.png", "name": "search", "lines": ["Find any phrase", "in seconds"] }
+  ]
+}

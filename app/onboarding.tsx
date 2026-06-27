@@ -28,9 +28,11 @@ export default function Onboarding() {
   const insets = useSafeAreaInsets();
   const [picked, setPicked] = useState<Level>('beginner');
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleStart() {
     if (busy) return;
+    setError(null);
     setBusy(true);
     try {
       await Storage.setLevel(picked);
@@ -38,6 +40,7 @@ export default function Onboarding() {
       router.replace('/today');
     } catch {
       setBusy(false);
+      setError('Something went wrong — please try again.');
     }
   }
 
@@ -61,7 +64,11 @@ export default function Onboarding() {
           </Text>
         </View>
 
-        <View style={styles.options}>
+        <View
+          style={styles.options}
+          accessibilityRole="radiogroup"
+          accessibilityLabel="Choose your level"
+        >
           {LEVELS.map((lvl) => {
             const selected = lvl.id === picked;
             return (
@@ -93,6 +100,15 @@ export default function Onboarding() {
         </View>
 
         <View style={styles.cta}>
+          {error && (
+            <Text
+              style={styles.error}
+              accessibilityLiveRegion="polite"
+              accessibilityRole="alert"
+            >
+              {error}
+            </Text>
+          )}
           {busy ? (
             <ActivityIndicator color={Colors.primary} />
           ) : (
@@ -195,8 +211,17 @@ const styles = StyleSheet.create({
   },
   cta: {
     paddingTop: Spacing.md,
-    // Fixed height so swapping the button for a spinner doesn't shift layout.
-    height: ComponentTokens.button.height + Spacing.md,
+    // Min height so swapping the button for a spinner doesn't shift layout;
+    // grows to fit the (rare) inline error message above the button.
+    minHeight: ComponentTokens.button.height + Spacing.md,
     justifyContent: 'center',
+  },
+  error: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeight.semibold,
+    color: Colors.accentDark,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
   },
 });
